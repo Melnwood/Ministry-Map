@@ -31,7 +31,7 @@
   h2 { font-size:16px; font-weight:750; margin:22px 0 4px; display:flex; align-items:center; gap:8px; }
   h2::before { content:''; width:4px; height:16px; border-radius:2px; background:linear-gradient(180deg,var(--z2),var(--z4)); }
   label { display:block; font-size:12.5px; font-weight:650; margin:14px 0 5px; }
-  input[type=text], textarea { width:100%; font-size:14px; padding:10px 13px; border-radius:10px;
+  input[type=text], input[type=email], input[type=password], textarea { width:100%; font-size:14px; padding:10px 13px; border-radius:10px;
     border:1.5px solid var(--grid); background:var(--surface); color:var(--ink); font-family:inherit; }
   textarea { min-height:130px; resize:vertical; line-height:1.55; }
   .hint { font-size:11.5px; color:var(--muted); margin-top:5px; }
@@ -227,7 +227,7 @@
     <div class="reassure" id="t-reassure">🔒 This is not a report card, and nobody grades you. Your map belongs to you. Only you decide what to share.</div>
     <div class="btnrow">
       <button class="btn" id="t-start" onclick="go(1)">Map my group →</button>
-      <button class="btn link" id="code-entry" style="display:none" onclick="enterCode()">Returning? Enter your group code</button>
+      <button class="btn link" id="signin-entry" style="display:none" onclick="showAuth('signin')">Returning? Sign in</button>
       <span class="timechip" id="t-time">⏱ about 10 minutes</span>
     </div>
   </div>
@@ -281,6 +281,35 @@
       <button class="btn" id="t-reveal" onclick="finishOnboarding()">Show me my map ✨</button>
     </div>
   </div>
+</div>
+
+<!-- ═══════════════ ACCOUNT (sign in / sign up) ═══════════════ -->
+<div class="wrap" id="authview" style="display:none">
+  <div class="eyebrow">Ministry Map</div>
+  <h1 id="auth-title">Create your account</h1>
+  <p class="lede" id="auth-lede">Your map lives on your account — sign in from any device, and invite co-leaders to share it.</p>
+  <div class="reassure" id="auth-invite" style="display:none"></div>
+  <div class="card">
+    <div id="auth-name-row">
+      <label id="t-auth-name">Your name</label>
+      <input type="text" id="auth-name" autocomplete="name" placeholder="e.g. Katka Novotná">
+    </div>
+    <label id="t-auth-email">Email</label>
+    <input type="email" id="auth-email" autocomplete="email" inputmode="email" placeholder="you@example.com">
+    <label id="t-auth-pw">Password</label>
+    <input type="password" id="auth-pw" autocomplete="new-password" placeholder="at least 8 characters">
+    <div id="auth-code-row">
+      <label id="t-auth-code">Group code from the old version <span style="font-weight:400; color:var(--muted)">(optional)</span></label>
+      <input type="text" id="auth-code" placeholder="e.g. RIVER-4821">
+      <div class="hint" id="t-auth-code-hint">Used Ministry Map before accounts? Enter your old group code once and your group moves onto your account.</div>
+    </div>
+    <div class="hint" id="auth-err" style="display:none; color:var(--critical); font-weight:600; margin-top:12px;"></div>
+    <div class="btnrow">
+      <button class="btn" id="auth-submit" onclick="submitAuth()">Create account →</button>
+      <button class="btn link" id="auth-toggle" onclick="toggleAuthMode()">Already have an account? Sign in</button>
+    </div>
+  </div>
+  <button class="backlink" onclick="authBack()">← Back</button>
 </div>
 
 <!-- ═══════════════ THE APP ═══════════════ -->
@@ -419,7 +448,11 @@ const L10N = {
       't-p2':'<b>Uvidíš, jak se pohybují.</b> Vrať se kdykoli; mapa si pamatuje a ukáže, kdo od minula udělal krok.',
       't-p3':'<b>Dostaneš otázky, za které stojí za to se modlit.</b> Žádné obecné rady — otázky z tvé skupiny a tvých vlastních slov.',
       't-reassure':'🔒 Tohle není vysvědčení a nikdo tě neznámkuje. Tvoje mapa patří tobě. Jen ty rozhoduješ, co sdílíš.',
-      't-start':'Zmapovat moji skupinu →', 't-time':'⏱ asi 10 minut', 'code-entry':'Vracíš se? Zadej kód skupiny',
+      't-start':'Zmapovat moji skupinu →', 't-time':'⏱ asi 10 minut', 'signin-entry':'Vracíš se? Přihlas se',
+      'auth-lede':'Tvoje mapa žije na tvém účtu — přihlas se z jakéhokoli zařízení a pozvi spoluvedoucí, ať ji sdílíte.',
+      't-auth-name':'Tvoje jméno', 't-auth-email':'E-mail', 't-auth-pw':'Heslo',
+      't-auth-code':'Kód skupiny ze staré verze <span style="font-weight:400; color:var(--muted)">(nepovinné)</span>',
+      't-auth-code-hint':'Používal jsi Ministry Map před účty? Zadej jednou svůj starý kód skupiny a skupina se přesune na tvůj účet.',
       't-s1-eyebrow':'Krok 1 ze 3', 't-s1-title':'Tvoje skupina',
       't-s1-l1':'Jak se vaše skupina jmenuje?', 't-s1-l2':'Kdo ji vede s tebou?',
       't-s1-hint':'Kouč i celá aplikace ti budou odpovídat česky.',
@@ -465,6 +498,7 @@ function setLang(l) {
   if (snapshots.length) renderAll();
   if (draft) renderCheckin();
   renderPlacer();
+  if (typeof setAuthMode === 'function' && $('authview') && $('authview').style.display === 'block') setAuthMode(authMode);
 }
 function zoneOf(v){ let z=0; ZFROM.forEach((f,i)=>{ if (v>=f) z=i; }); return z; }
 function hashN(n){ let h=0; for (const c of n) h=(h*31+c.charCodeAt(0))%997; return h; }
@@ -480,12 +514,20 @@ let step = 0;
 
 // ═══════════ cloud sync (Netlify function → Airtable) ═══════════
 const API = '/api';
-let cloud = { on:false, code:null };
+let cloud = { on:false, gid:null };
 function lsGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
 function lsSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+function lsDel(k){ try { localStorage.removeItem(k); } catch(e){} }
 async function api(path, body){
-  const r = await fetch(API+path, body ? { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) } : undefined);
-  if (!r.ok) throw new Error(await r.text());
+  const headers = session.token ? { 'Authorization':'Bearer '+session.token } : {};
+  const r = await fetch(API+path, body
+    ? { method:'POST', headers:{ ...headers, 'Content-Type':'application/json' }, body:JSON.stringify(body) }
+    : { headers });
+  if (!r.ok) {
+    let msg = await r.text();
+    try { msg = JSON.parse(msg).error || msg; } catch(e){}
+    const err = new Error(msg); err.status = r.status; throw err;
+  }
   return r.json();
 }
 async function boot(){
@@ -499,27 +541,140 @@ async function boot(){
     const h = await api('/health');
     if (!h.configured) return;
     cloud.on = true;
-    const code = new URLSearchParams(location.search).get('code') || lsGet('mm-code');
-    if (code) { await loadCloud(code); return; }
-    const el = document.getElementById('code-entry');
+    lsDel('mm-code'); // pre-account era
+    pendingInvite = new URLSearchParams(location.search).get('invite');
+    if (session.token) {
+      try {
+        const me = await api('/auth/me');
+        session.leader = me.leader; session.groups = me.groups;
+        if (pendingInvite) { await acceptInvite(); return; }
+        const saved = lsGet('mm-group');
+        const g = me.groups.find(x=>x.id===saved) || me.groups[0];
+        if (g) { await loadGroup(g.id); return; }
+        return; // signed in, no group yet — onboarding is already on screen
+      } catch(e) { session = { token:null, leader:null, groups:[] }; lsDel('mm-token'); }
+    }
+    if (pendingInvite) { await showInviteWelcome(); return; }
+    const el = $('signin-entry');
     if (el) el.style.display = 'inline';
   } catch(e) { /* no backend — run local */ }
 }
-async function loadCloud(code){
+async function loadGroup(gid){
   try {
-    const s = await api('/state?code='+encodeURIComponent(code));
+    const s = await api('/state?group='+encodeURIComponent(gid));
     group = s.group; snapshots = s.snapshots; notes = s.notes;
     EVENTS = s.events; PROGRAMS = s.programs;
-    cloud.code = code; lsSet('mm-code', code);
-    if (snapshots.length) enterApp();
-  } catch(e) { alert('Could not find a group for that code.'); }
-}
-function enterCode(){
-  const code = prompt('Enter your group code:');
-  if (code) loadCloud(code.trim());
+    cloud.gid = gid; lsSet('mm-group', gid);
+    if (snapshots.length) enterApp(); else { showOnb(); go(1); }
+  } catch(e) { alert('Could not load your group: '+e.message); }
 }
 function cloudSave(path, body){
-  if (cloud.on && cloud.code) api(path, { code: cloud.code, ...body }).catch(err=>console.warn('cloud save failed', err));
+  if (cloud.on && cloud.gid && session.token) api(path, { group: cloud.gid, ...body }).catch(err=>console.warn('cloud save failed', err));
+}
+
+// ═══════════ account (email/password via Leaders table) ═══════════
+let session = { token: lsGet('mm-token') || null, leader:null, groups:[] };
+let pendingInvite = null;   // invite token from ?invite=…
+let authMode = 'signup';    // 'signup' | 'signin'
+let authNext = null;        // 'bootstrap' → run doBootstrap() after auth
+const AUTH_TXT = {
+  en: { up:{ title:'Create your account', submit:'Create account →', toggle:'Already have an account? Sign in', pw:'at least 8 characters' },
+        si:{ title:'Welcome back', submit:'Sign in →', toggle:'New here? Create an account', pw:'your password' },
+        save:'One more step — create your account so your map is saved and waits for you on any device.' },
+  cs: { up:{ title:'Vytvoř si účet', submit:'Vytvořit účet →', toggle:'Už máš účet? Přihlas se', pw:'aspoň 8 znaků' },
+        si:{ title:'Vítej zpátky', submit:'Přihlásit se →', toggle:'Jsi tu poprvé? Vytvoř si účet', pw:'tvoje heslo' },
+        save:'Ještě jeden krok — vytvoř si účet, ať se tvoje mapa uloží a počká na tebe na jakémkoli zařízení.' },
+};
+function showOnb(){ $('authview').style.display='none'; $('app').style.display='none'; $('onb').style.display='block'; }
+function showAuth(mode){
+  $('onb').style.display='none'; $('app').style.display='none'; $('authview').style.display='block';
+  $('auth-invite').style.display='none';
+  setAuthMode(mode || authMode);
+  window.scrollTo(0,0);
+}
+function setAuthMode(mode){
+  authMode = mode;
+  const t = (AUTH_TXT[LANG] || AUTH_TXT.en)[mode==='signup' ? 'up' : 'si'];
+  $('auth-title').textContent = t.title;
+  $('auth-submit').textContent = t.submit;
+  $('auth-toggle').textContent = t.toggle;
+  $('auth-pw').placeholder = t.pw;
+  $('auth-pw').autocomplete = mode==='signup' ? 'new-password' : 'current-password';
+  $('auth-name-row').style.display = mode==='signup' ? 'block' : 'none';
+  // legacy code claim only makes sense on plain signup, not when following an invite
+  $('auth-code-row').style.display = (mode==='signup' && !pendingInvite && authNext!=='bootstrap') ? 'block' : 'none';
+  $('auth-lede').style.display = authNext==='bootstrap' ? 'none' : 'block';
+  authErr('');
+}
+function toggleAuthMode(){ setAuthMode(authMode==='signup' ? 'signin' : 'signup'); }
+function authErr(msg){ const el=$('auth-err'); el.textContent = msg; el.style.display = msg ? 'block' : 'none'; }
+function authBack(){
+  showOnb(); go(authNext==='bootstrap' ? 3 : 0);
+}
+async function showInviteWelcome(){
+  showAuth('signup');
+  try {
+    const info = await api('/invite?token='+encodeURIComponent(pendingInvite));
+    const el = $('auth-invite');
+    el.style.display = 'block';
+    el.textContent = `🤝 ${info.by || 'A leader'} invited you to co-lead “${info.group}.” Create your account (or sign in) and the group is yours too.`;
+  } catch(e) { pendingInvite = null; clearInviteParam(); authErr(e.message); setAuthMode(authMode); }
+}
+function clearInviteParam(){
+  if (location.search) history.replaceState(null, '', location.pathname);
+}
+async function submitAuth(){
+  const email = $('auth-email').value.trim(), pw = $('auth-pw').value;
+  $('auth-submit').disabled = true;
+  try {
+    let res;
+    if (authMode === 'signup') {
+      res = await api('/auth/signup', {
+        name: $('auth-name').value.trim(), email, password: pw,
+        language: LANG==='cs' ? 'Čeština' : 'English',
+        invite: pendingInvite || undefined,
+        groupCode: $('auth-code').value.trim() || undefined,
+      });
+    } else {
+      res = await api('/auth/signin', { email, password: pw });
+    }
+    session = { token: res.token, leader: res.leader, groups: res.groups };
+    lsSet('mm-token', res.token);
+    if (authMode === 'signin' && pendingInvite) { await acceptInvite(); return; }
+    pendingInvite = null; clearInviteParam();
+    await afterAuth();
+  } catch(e) { authErr(e.message); }
+  finally { $('auth-submit').disabled = false; }
+}
+async function acceptInvite(){
+  try {
+    const j = await api('/invite/accept', { token: pendingInvite });
+    session.groups = j.groups;
+    pendingInvite = null; clearInviteParam();
+    await loadGroup(j.group.id);
+  } catch(e) {
+    pendingInvite = null; clearInviteParam();
+    alert('Could not join the group: '+e.message);
+    await afterAuth();
+  }
+}
+async function afterAuth(){
+  if (authNext === 'bootstrap') { authNext = null; await doBootstrap(); return; }
+  if (session.groups.length) { await loadGroup(session.groups[0].id); }
+  else { showOnb(); go(1); } // fresh account — map their group
+}
+function signOut(){
+  lsDel('mm-token'); lsDel('mm-group');
+  location.href = location.pathname;
+}
+async function inviteCoLeader(){
+  try {
+    const res = await api('/invite', { group: cloud.gid });
+    const link = location.origin + location.pathname + '?invite=' + res.token;
+    let copied = false;
+    try { await navigator.clipboard.writeText(link); copied = true; } catch(e){}
+    prompt((copied ? '✓ Copied to clipboard. ' : '') + 'Send this link to your co-leader — it lets them create their own account on your group (valid 14 days):', link);
+  } catch(e) { alert('Could not create an invite: '+e.message); }
 }
 
 const $ = id => document.getElementById(id);
@@ -691,29 +846,45 @@ function demo() {
   enterApp();
 }
 
+let pendingBootstrap = null;
 async function finishOnboarding() {
   group.name = $('gname').value.trim() || 'My youth group';
   group.leaders = $('gleaders').value.trim();
   if (!people.length) { alert('Add at least one name on the previous step — or use the Frýdlant demo group.'); return; }
-  const today = new Date();
   const students = {};
   people.forEach(p=>students[p.n]=p.v);
+  pendingBootstrap = { students, note: $('heart').value.trim() };
+  if (cloud.on && !session.leader) {
+    // saving needs an account — finish there, then bootstrap
+    authNext = 'bootstrap';
+    showAuth('signup');
+    authErr('');
+    $('auth-invite').style.display = 'block';
+    $('auth-invite').textContent = (AUTH_TXT[LANG] || AUTH_TXT.en).save;
+    return;
+  }
+  await doBootstrap();
+}
+async function doBootstrap() {
+  const { students, note } = pendingBootstrap || { students:{}, note:'' };
+  const today = new Date();
   snapshots = [{ date: today.toISOString().slice(0,10),
     label: today.toLocaleDateString('en-GB',{month:'short',year:'numeric'}), students }];
-  const heart = $('heart').value.trim();
-  if (heart) notes.push({ date: today.toISOString().slice(0,10), text: heart });
-  if (cloud.on) {
+  notes = note ? [{ date: today.toISOString().slice(0,10), text: note }] : [];
+  if (cloud.on && session.leader) {
     try {
-      const res = await api('/bootstrap', { group, students, note: heart, language: LANG==='cs'?'Čeština':'English' });
-      cloud.code = res.code; lsSet('mm-code', res.code);
-      alert(`Your group is saved. ☁\n\nYour group code is:  ${res.code}\n\nWrite it down — it’s how you (or a co-leader) get back to your map from any device.`);
+      const res = await api('/bootstrap', { group, students, note, language: LANG==='cs'?'Čeština':'English' });
+      cloud.gid = res.group.id; lsSet('mm-group', res.group.id);
+      session.groups = res.groups;
     } catch(e) { alert('Saved locally — the cloud backend isn’t reachable right now.'); }
   }
+  pendingBootstrap = null;
   enterApp(true);
 }
 
 function enterApp(firstTime) {
   $('onb').style.display = 'none';
+  $('authview').style.display = 'none';
   $('app').style.display = 'block';
   $('app-title').textContent = group.name || 'Your group';
   if (firstTime) {
@@ -747,7 +918,9 @@ function renderHome() {
       <div class="avatar" style="background:${AV_COLORS[i%AV_COLORS.length]}">${m.slice(0,1).toUpperCase()}</div>
       <div><div class="mn">${m}</div><div class="mr">${i===0?'leader':'co-leader'}</div></div>
     </div>`).join('') : '<div style="font-size:13px;color:var(--muted)">Add your team in setup — leading alone is the first thing to fix. 🙂</div>')
-    + `<div style="margin-left:auto; font-size:11px; color:var(--muted)">📷 photos come with the full version</div>`;
+    + (session.leader && cloud.gid
+        ? `<button class="btn ghost" style="margin-left:auto; font-size:12px; padding:7px 13px;" onclick="inviteCoLeader()">＋ Invite a co-leader</button>`
+        : `<div style="margin-left:auto; font-size:11px; color:var(--muted)">📷 photos come with the full version</div>`);
 
   // focus — max three things, drawn from the map
   const a = prev(), b = last(), d = diff(a,b);
@@ -815,7 +988,12 @@ function renderToday() {
         <button class="btn" style="margin-left:auto; padding:7px 14px; font-size:12.5px;" onclick="saveCheckin()">Save check-in ✓</button>
       </div>`
     : '';
-  $('hdr-meta').textContent = `${group.leaders? group.leaders+' · ':''}${Object.keys(last().students).length} students · last check-in ${fmtDate(last().date)} · ${snapshots.length} check-in${snapshots.length===1?'':'s'} logged` + (snapshots.some(s=>s.demo)?' · earlier check-ins are demo history':'') + (cloud.code?' · ☁ synced (code '+cloud.code+')':(cloud.on?'':' · local only'));
+  const others = session.groups.filter(g=>g.id!==cloud.gid);
+  const acct = session.leader
+    ? ` · ☁ ${session.leader.email} <a href="#" style="color:var(--muted)" onclick="signOut();return false">(sign out)</a>`
+      + (others.length ? ` · <select onchange="loadGroup(this.value)" style="font-size:11px; font-family:inherit; padding:1px 4px; border-radius:6px; border:1px solid var(--grid); background:var(--surface); color:var(--ink2);">${session.groups.map(g=>`<option value="${g.id}" ${g.id===cloud.gid?'selected':''}>${g.name}</option>`).join('')}</select>` : '')
+    : (cloud.on ? '' : ' · local only');
+  $('hdr-meta').innerHTML = `${group.leaders? group.leaders+' · ':''}${Object.keys(last().students).length} students · last check-in ${fmtDate(last().date)} · ${snapshots.length} check-in${snapshots.length===1?'':'s'} logged` + (snapshots.some(s=>s.demo)?' · earlier check-ins are demo history':'') + acct;
   $('today-zones').innerHTML = ZONES.map((z,i)=>{
     const names = Object.keys(cur.students).filter(n=>zoneOf(cur.students[n])===i).sort();
     return `<div class="zcol" style="border-top-color:${z.c}">

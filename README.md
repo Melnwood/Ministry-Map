@@ -19,16 +19,38 @@ season, watch movement over time, and get coaching questions drawn from the grou
 3. In Netlify → Site configuration → Environment variables, add:
    - `AIRTABLE_TOKEN` = the token
    - `AIRTABLE_BASE` = `apphewwdjgUpUMtME` (optional; this is the default)
-4. Redeploy. Visit the site: onboarding creates a group and returns a **group code**
-   (e.g. `RIVER-4821`) — the leader's key back into their map from any device
-   (`?code=RIVER-4821` also works as a direct link).
+   - `SESSION_SECRET` = any long random string — signs session & invite tokens
+     (optional; falls back to `AIRTABLE_TOKEN`, but changing either signs everyone out)
+4. Redeploy. Visit the site: onboarding maps the group, then asks the leader to
+   **create an account** (email + password); the map is saved to that account and
+   reachable from any device by signing in.
 
 Without the token configured, the app still runs fully in local (in-memory) mode.
 
+## Accounts (Leaders table)
+
+- Leaders sign up with email + password. Passwords are stored in the **Leaders** table as
+  salted PBKDF2 hashes (100k iterations, SHA-256) — never in plain text.
+- Sessions are stateless HMAC-signed tokens (30 days), kept in the browser's localStorage.
+- **Co-leader invites**: from the home page, "Invite a co-leader" produces a signed link
+  (`?invite=…`, valid 14 days). The co-leader opens it, creates an account (or signs in),
+  and the group is added to their account too. A leader can belong to several groups.
+- **Migrating from group codes**: leaders who used the old code system enter their old
+  code once on the signup form and their existing group moves onto the new account.
+
 ## API (all under `/api/*`)
 
+Authenticated routes take an `Authorization: Bearer <token>` header.
+
 - `GET /api/health` — `{ ok, configured }`
-- `GET /api/state?code=X` — full group state (snapshots, notes, events, programs, team)
-- `POST /api/bootstrap` — `{ group, students: {name: position}, note }` → `{ code }`
-- `POST /api/checkin` — `{ code, students, note }`
-- `POST /api/event` — `{ code, name, date }`
+- `POST /api/auth/signup` — `{ name, email, password, language?, invite?, groupCode? }` → `{ token, leader, groups }`
+- `POST /api/auth/signin` — `{ email, password }` → `{ token, leader, groups }`
+- `GET /api/auth/me` — `{ leader, groups }`
+- `POST /api/invite` — `{ group }` → `{ token }` (signed co-leader invite, 14 days)
+- `GET /api/invite?token=X` — `{ group, by }` (peek before accepting; no auth)
+- `POST /api/invite/accept` — `{ token }` → joins the group
+- `GET /api/state?group=X` — full group state (snapshots, notes, events, programs, team)
+- `POST /api/bootstrap` — `{ group, students: {name: position}, note }` → `{ group, groups }`
+- `POST /api/checkin` — `{ group, students, note }`
+- `POST /api/event` — `{ group, name, date }`
+- `GET /api/aggregate` — anonymous movement-wide aggregates (public)
