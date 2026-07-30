@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ministry Map</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --baseline:#c3c2b7; --border:rgba(11,11,11,0.10);
+    --z1:#86b6ef; --z2:#5598e7; --z3:#2a78d6; --z4:#1c5cab; --z5:#104281;
+    --accent:#2a78d6; --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { color-scheme:dark;
+      --page:#0d0d0d; --surface:#1a1a19; --ink:#fff; --ink2:#c3c2b7; --muted:#898781;
+      --grid:#2c2c2a; --baseline:#383835; --border:rgba(255,255,255,0.10);
+      --z1:#cde2fb; --z2:#9ec5f4; --z3:#6da7ec; --z4:#3987e5; --z5:#256abf; --accent:#3987e5; }
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:system-ui,-apple-system,"Segoe UI",sans-serif; background:var(--page); color:var(--ink);
+    line-height:1.5; min-height:100vh; padding-bottom:60px; }
+  .topbar { height:5px; background:linear-gradient(90deg,var(--z1),var(--z2),var(--z3),var(--z4),var(--z5)); }
+  .wrap { max-width:680px; margin:0 auto; padding:24px 16px 40px; }
+  .wrap.wide { max-width:780px; }
+  .eyebrow { font-size:11px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:var(--accent); }
+  h1 { font-size:26px; font-weight:800; letter-spacing:-0.015em; line-height:1.15; margin-top:4px; }
+  .lede { font-size:13.5px; color:var(--ink2); margin-top:7px; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:15px 18px; margin-top:12px; }
+  h2 { font-size:16px; font-weight:750; margin:22px 0 4px; display:flex; align-items:center; gap:8px; }
+  h2::before { content:''; width:4px; height:16px; border-radius:2px; background:linear-gradient(180deg,var(--z2),var(--z4)); }
+  label { display:block; font-size:12.5px; font-weight:650; margin:14px 0 5px; }
+  input[type=text], textarea { width:100%; font-size:14px; padding:10px 13px; border-radius:10px;
+    border:1.5px solid var(--grid); background:var(--surface); color:var(--ink); font-family:inherit; }
+  textarea { min-height:130px; resize:vertical; line-height:1.55; }
+  .hint { font-size:11.5px; color:var(--muted); margin-top:5px; }
+  .btn { font-size:14px; font-weight:700; padding:11px 20px; border-radius:11px; border:none;
+    background:var(--accent); color:#fff; cursor:pointer; font-family:inherit; }
+  .btn.ghost { background:none; color:var(--ink2); border:1.5px solid var(--grid); }
+  .btn.link { background:none; color:var(--muted); border:none; font-weight:600; font-size:12.5px; }
+  .btnrow { display:flex; gap:10px; margin-top:20px; align-items:center; flex-wrap:wrap; }
+  .timechip { margin-left:auto; font-size:11.5px; color:var(--muted); }
+  /* onboarding */
+  .dots { display:flex; gap:6px; justify-content:center; margin-bottom:20px; }
+  .dots i { width:8px; height:8px; border-radius:50%; background:var(--grid); }
+  .dots i.on { background:var(--accent); width:22px; border-radius:5px; }
+  .screen { display:none; }
+  .screen.active { display:block; animation:fade .25s ease; }
+  @keyframes fade { from { opacity:0; transform:translateY(6px);} to { opacity:1; transform:none;} }
+  .line-wrap { position:relative; padding:26px 0 0; margin-top:14px; }
+  .rail { position:absolute; top:35px; left:4%; right:4%; height:3px; border-radius:2px;
+    background:linear-gradient(90deg,var(--z1),var(--z2),var(--z3),var(--z4),var(--z5)); }
+  .line-cols { display:flex; position:relative; }
+  .line-cols > div { flex:1; text-align:center; padding:0 3px; }
+  .lnode { width:18px; height:18px; border-radius:50%; margin:0 auto; border:3px solid var(--page);
+    box-shadow:0 0 0 1px var(--border); position:relative; z-index:1; }
+  .line-cols .t { font-size:11.5px; font-weight:700; margin-top:11px; line-height:1.2; }
+  .line-cols .q { font-size:9.5px; color:var(--muted); font-style:italic; margin-top:5px; line-height:1.35; }
+  @media (max-width:520px) { .line-cols .q { display:none; } .line-cols .t { font-size:10px; } }
+  .promise { display:grid; gap:10px; margin-top:16px; }
+  .promise .p { display:flex; gap:12px; align-items:flex-start; font-size:13.5px; color:var(--ink2); }
+  .promise .p b { color:var(--ink); font-weight:650; }
+  .pdot { width:8px; height:8px; border-radius:50%; margin-top:7px; flex:none; }
+  .reassure { margin-top:16px; font-size:12.5px; color:var(--muted); padding:10px 14px; border:1px dashed var(--baseline); border-radius:10px; }
+  .prompts { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 6px; }
+  .prompts span { font-size:11.5px; color:var(--ink2); background:var(--surface); border:1px solid var(--grid);
+    padding:3px 10px; border-radius:14px; }
+  /* journey sliders */
+  .keyline { display:flex; margin:10px 0 2px; }
+  .keyline div { flex:1; text-align:center; font-size:8.5px; font-weight:700; color:var(--muted); }
+  .jrow { padding:11px 0 13px; border-bottom:1px solid var(--grid); }
+  .jrow:last-child { border-bottom:none; }
+  .jhead { display:flex; align-items:baseline; gap:9px; }
+  .jhead .jname { font-size:13.5px; font-weight:700; }
+  .jhead .zl { font-size:10.5px; font-weight:600; }
+  .jhint { text-align:center; font-size:11px; margin-top:2px; min-height:15px; color:var(--muted); }
+  .jhint.near { color:var(--serious); font-weight:650; }
+  .jhint.crossed { color:var(--good); font-weight:650; }
+  .jhint.still { color:var(--muted); }
+  .stopbtn { margin-left:auto; font-size:11px; font-weight:600; color:var(--muted);
+    background:none; border:1px solid var(--grid); border-radius:8px; padding:3px 10px; cursor:pointer; font-family:inherit; }
+  .stopbtn:hover { color:var(--serious); border-color:var(--serious); }
+  .jrow.gone .stopbtn { color:var(--accent); border-color:var(--accent); }
+  .jrow.gone .jname { text-decoration:line-through; color:var(--muted); }
+  .gonemsg { text-align:center; font-size:12px; color:var(--muted); padding:8px 0 2px; }
+  .rmbtn { font-size:11px; color:var(--muted); background:none; border:none; cursor:pointer; margin-left:auto; }
+  .slider { position:relative; height:34px; margin-top:4px; }
+  .srail { position:absolute; top:15px; left:0; right:0; height:4px; border-radius:2px;
+    background:linear-gradient(90deg,var(--z1),var(--z2),var(--z3),var(--z4),var(--z5)); opacity:.9; }
+  .mstone { position:absolute; top:10px; width:13px; height:13px; border-radius:50%;
+    background:var(--surface); border:3px solid var(--baseline); transform:translateX(-50%); pointer-events:none; }
+  .gdot { position:absolute; top:12px; width:9px; height:9px; border-radius:50%;
+    border:2px dashed var(--muted); transform:translateX(-50%); pointer-events:none; z-index:1; }
+  .slider input[type=range] { position:absolute; inset:0; width:100%; height:100%;
+    -webkit-appearance:none; appearance:none; background:none; cursor:pointer; z-index:2; }
+  .slider input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; appearance:none;
+    width:20px; height:20px; border-radius:50%; background:var(--tc,var(--accent));
+    border:3.5px solid var(--surface); box-shadow:0 0 0 1.5px var(--border), 0 1px 4px rgba(0,0,0,.25); }
+  .slider input[type=range]::-moz-range-thumb { width:20px; height:20px; border-radius:50%;
+    background:var(--tc,var(--accent)); border:3.5px solid var(--surface);
+    box-shadow:0 0 0 1.5px var(--border), 0 1px 4px rgba(0,0,0,.25); }
+  /* app chrome */
+  .tabs { display:flex; gap:6px; margin-top:16px; border-bottom:1px solid var(--grid); overflow-x:auto; }
+  .tab { font-size:13.5px; font-weight:650; color:var(--muted); padding:8px 13px 10px;
+    border:none; background:none; cursor:pointer; border-bottom:2.5px solid transparent; white-space:nowrap; font-family:inherit; }
+  .tab.active { color:var(--ink); border-bottom-color:var(--accent); }
+  .tab .badge { display:inline-block; min-width:17px; text-align:center; font-size:10.5px; font-weight:700;
+    background:var(--critical); color:#fff; border-radius:9px; padding:0 4px; margin-left:4px; vertical-align:1px; }
+  .pane { display:none; margin-top:16px; }
+  .pane.active { display:block; }
+  .zones { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-top:10px; }
+  .zcol { border-top:3px solid; border-radius:3px 3px 10px 10px; background:var(--surface);
+    border-right:1px solid var(--grid); border-bottom:1px solid var(--grid); border-left:1px solid var(--grid); padding:8px; min-height:90px; }
+  .zcol h4 { font-size:10px; font-weight:700; letter-spacing:.03em; line-height:1.2; }
+  .zcol .zc { font-size:18px; font-weight:700; margin:2px 0 6px; }
+  .zcol .zc small { font-size:10px; color:var(--muted); font-weight:400; }
+  .nm { display:block; font-size:11px; padding:2px 7px; border-radius:12px; background:var(--page);
+    border:1px solid var(--grid); margin-bottom:3px; width:fit-content; }
+  .nm.up::after { content:' ↑'; color:var(--good); font-weight:700; }
+  .nm.down::after { content:' ↓'; color:var(--serious); font-weight:700; }
+  .nm.new::after { content:' ✦'; color:var(--accent); }
+  .zempty { font-size:10.5px; color:var(--serious); font-style:italic; margin-top:4px; }
+  .addrow { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+  .addrow input { flex:1 1 200px; font-size:13.5px; padding:8px 12px; border-radius:10px;
+    border:1.5px solid var(--grid); background:var(--page); color:var(--ink); font-family:inherit; }
+  .savebar { position:sticky; bottom:12px; margin-top:16px; display:flex; gap:8px; justify-content:flex-end; }
+  .hist-row { display:grid; grid-template-columns:78px 1fr; gap:10px; align-items:center; margin:8px 0; }
+  .hist-row .hd { font-size:12px; color:var(--ink2); text-align:right; font-weight:600; }
+  .hbar { display:flex; height:22px; border-radius:5px; overflow:hidden; gap:2px; }
+  .hbar span { display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; min-width:0; }
+  .hbar span.lt { color:var(--ink); }
+  .legend { display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; font-size:11px; color:var(--ink2); }
+  .legend i { width:9px; height:9px; border-radius:50%; display:inline-block; margin-right:4px; }
+  .mv { display:flex; gap:10px; padding:9px 0; border-bottom:1px solid var(--grid); font-size:13px; align-items:baseline; }
+  .mv:last-child { border-bottom:none; }
+  .mv .ico { flex:none; width:22px; text-align:center; }
+  .mv b { font-weight:650; }
+  .mv .path { color:var(--muted); font-size:12px; }
+  .mv .q { color:var(--ink2); font-size:12.5px; margin-top:1px; }
+  .coach-card { border-radius:14px; padding:14px 16px; margin-top:10px; background:var(--surface);
+    border:1px solid var(--border); border-left:4px solid var(--grid); }
+  .coach-card.celebrate { border-left-color:var(--good); }
+  .coach-card.care { border-left-color:var(--serious); }
+  .coach-card.challenge { border-left-color:var(--z4); }
+  .coach-card.door { border-left-color:var(--warning); }
+  .coach-card.echo { border-left-color:var(--serious); }
+  .coach-card .kick { font-size:10.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+  .coach-card p { font-size:13.5px; margin-top:4px; }
+  .coach-card .why { font-size:11.5px; color:var(--muted); margin-top:5px; }
+  .coach-card .quote { font-size:12px; color:var(--muted); font-style:italic; margin-top:6px; }
+  .ai-note { font-size:12px; color:var(--muted); margin-top:14px; padding:10px 12px; border-radius:10px; border:1px dashed var(--baseline); }
+  .meta { color:var(--muted); font-size:12px; margin-top:4px; }
+  /* home */
+  .backlink { font-size:12.5px; font-weight:650; color:var(--muted); background:none; border:none;
+    cursor:pointer; font-family:inherit; padding:0; margin-top:14px; }
+  .backlink:hover { color:var(--accent); }
+  .team-row { display:flex; gap:14px; flex-wrap:wrap; align-items:center; }
+  .member { display:flex; align-items:center; gap:8px; }
+  .avatar { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:750; color:#fff; flex:none; }
+  .member .mn { font-size:13px; font-weight:650; }
+  .member .mr { font-size:11px; color:var(--muted); }
+  .focus-row { display:flex; gap:12px; padding:11px 0; border-bottom:1px solid var(--grid); align-items:baseline; }
+  .focus-row:last-child { border-bottom:none; }
+  .focus-row .fi { flex:none; width:24px; text-align:center; font-size:16px; }
+  .focus-row .ft { font-size:13.5px; }
+  .focus-row .ft b { font-weight:700; }
+  .focus-row .fw { font-size:11.5px; color:var(--muted); margin-top:1px; }
+  .evrow { display:flex; gap:12px; padding:9px 0; border-bottom:1px solid var(--grid); align-items:baseline; }
+  .evrow:last-child { border-bottom:none; }
+  .evrow .ed { flex:none; width:64px; text-align:center; border:1px solid var(--grid); border-radius:9px;
+    padding:4px 2px; background:var(--page); }
+  .evrow .ed .em { font-size:9.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--serious); }
+  .evrow .ed .eday { font-size:17px; font-weight:750; line-height:1.1; }
+  .evrow .en { font-size:13.5px; font-weight:650; }
+  .evrow .ez { font-size:11.5px; color:var(--muted); }
+  .mapmod { cursor:pointer; transition:border-color .12s; }
+  .mapmod:hover { border-color:var(--accent); }
+  .mapmod .strip { display:flex; gap:2px; margin-top:10px; border-radius:6px; overflow:hidden; }
+  .mapmod .strip span { display:flex; align-items:center; justify-content:center; height:30px;
+    font-size:12px; font-weight:700; color:#fff; min-width:24px; }
+  .mapmod .strip span.lt { color:var(--ink); }
+  .mapmod .open { display:flex; align-items:center; gap:8px; margin-top:12px; font-size:13px; font-weight:700; color:var(--accent); }
+  .mapmod .open .cbadge { min-width:18px; text-align:center; font-size:10.5px; font-weight:700;
+    background:var(--critical); color:#fff; border-radius:9px; padding:1px 5px; }
+  #tip { position:fixed; pointer-events:none; background:var(--ink); color:var(--page);
+    font-size:12px; padding:5px 9px; border-radius:6px; opacity:0; transition:opacity .1s; z-index:10; max-width:240px; }
+  @media (max-width:560px) { .zones { grid-template-columns:repeat(2,1fr); } .zones .zcol:last-child { grid-column:span 2; } }
+</style>
+</head>
+<body>
+<div class="topbar"></div>
+
+<!-- ═══════════════ ONBOARDING ═══════════════ -->
+<div class="wrap" id="onb">
+  <div class="dots" id="dots"></div>
+
+  <div class="screen active" data-s="0">
+    <div style="display:flex; align-items:center;">
+      <div class="eyebrow">Ministry Map</div>
+      <select id="langsel" onchange="setLang(this.value)" style="margin-left:auto; font-size:12px; font-family:inherit; padding:5px 8px; border-radius:8px; border:1.5px solid var(--grid); background:var(--surface); color:var(--ink2);">
+        <option value="en">🌐 English</option>
+        <option value="cs">🌐 Čeština</option>
+        <option disabled>Polski — brzy</option>
+        <option disabled>Українська — незабаром</option>
+        <option disabled>Slovenčina · Magyar · Română…</option>
+      </select>
+    </div>
+    <h1 id="t-title">See your group the way the Shepherd does.</h1>
+    <p class="lede" id="t-lede">Jesus called people step by step. A ministry map is simply your group, laid out along that journey — so you can see where each young person really is, and what they need next.</p>
+    <div class="line-wrap">
+      <div class="rail"></div>
+      <div class="line-cols">
+        <div><div class="lnode" style="background:var(--z1)"></div><div class="t">Come &amp; see</div><div class="q">“Come and you will see.”</div></div>
+        <div><div class="lnode" style="background:var(--z2)"></div><div class="t">Repent &amp; believe</div><div class="q">“Repent and believe the good news.”</div></div>
+        <div><div class="lnode" style="background:var(--z3)"></div><div class="t">Follow me</div><div class="q">“Come, follow me.”</div></div>
+        <div><div class="lnode" style="background:var(--z4)"></div><div class="t">Fish for people</div><div class="q">“I will send you out to fish for people.”</div></div>
+        <div><div class="lnode" style="background:var(--z5)"></div><div class="t">I am sending you</div><div class="q">“As the Father has sent me, I am sending you.”</div></div>
+      </div>
+    </div>
+    <div class="promise">
+      <div class="p"><span class="pdot" style="background:var(--z2)"></span><span id="t-p1"><b>See everyone at once.</b> Every student, placed on the journey — the whole group in one picture.</span></div>
+      <div class="p"><span class="pdot" style="background:var(--z3)"></span><span id="t-p2"><b>Watch them move.</b> Check in anytime; the map remembers, and shows who stepped forward since last time.</span></div>
+      <div class="p"><span class="pdot" style="background:var(--z4)"></span><span id="t-p3"><b>Get questions worth praying over.</b> Not generic advice — questions built from your group and your own words.</span></div>
+    </div>
+    <div class="reassure" id="t-reassure">🔒 This is not a report card, and nobody grades you. Your map belongs to you. Only you decide what to share.</div>
+    <div class="btnrow">
+      <button class="btn" id="t-start" onclick="go(1)">Map my group →</button>
+      <button class="btn link" id="code-entry" style="display:none" onclick="enterCode()">Returning? Enter your group code</button>
+      <span class="timechip" id="t-time">⏱ about 10 minutes</span>
+    </div>
+  </div>
+
+  <div class="screen" data-s="1">
+    <div class="eyebrow" id="t-s1-eyebrow">Step 1 of 3</div>
+    <h1 id="t-s1-title">Your group</h1>
+    <label id="t-s1-l1">What’s your group called?</label>
+    <input type="text" id="gname" placeholder="e.g. Frýdlant mládež">
+    <label id="t-s1-l2">Who leads it with you?</label>
+    <input type="text" id="gleaders" placeholder="e.g. Katka & Boža">
+    <div class="hint" id="t-s1-hint">The whole app and the coach questions come back in your chosen language.</div>
+    <div class="btnrow">
+      <button class="btn ghost t-back" onclick="go(0)">← Back</button>
+      <button class="btn" id="t-s1-next" onclick="go(2)">Next: your people →</button>
+      <button class="btn link" id="t-demo" onclick="demo()">or try it with Frýdlant’s demo group</button>
+    </div>
+  </div>
+
+  <div class="screen" data-s="2">
+    <div class="eyebrow" id="t-s2-eyebrow">Step 2 of 3</div>
+    <h1 id="t-s2-title">Your people</h1>
+    <p class="lede" id="t-s2-lede">Bring them in however is easiest — then slide each dot to where they really are on the road, even if that’s “almost.” Go with your gut; you can change anything later.</p>
+    <div class="card">
+      <textarea id="names" style="min-height:80px" placeholder="Krista, Adam, Honza&#10;Bára&#10;Jonáš  — commas or new lines, either way"></textarea>
+      <div class="btnrow" style="margin-top:10px">
+        <button class="btn ghost" id="t-addnames" onclick="parseNames()">Add these names ↓</button>
+        <button class="btn ghost" onclick="document.getElementById('csvfile').click()" id="t-import">📄 Import CSV / Excel</button>
+        <input type="file" id="csvfile" accept=".csv,.tsv,.txt,.xlsx,.xls" style="display:none" onchange="importFile(this)">
+      </div>
+      <div class="hint" id="import-msg">Have a roster already? Import it — we’ll read the names from the first column (or any column titled “name”).</div>
+      <div id="placer"></div>
+    </div>
+    <div class="btnrow">
+      <button class="btn ghost t-back" onclick="go(1)">← Back</button>
+      <button class="btn" id="t-s2-next" onclick="go(3)">Next: how it’s really going →</button>
+    </div>
+  </div>
+
+  <div class="screen" data-s="3">
+    <div class="eyebrow" id="t-s3-eyebrow">Step 3 of 3</div>
+    <h1 id="t-s3-title">Before the numbers — how is it <em style="font-style:normal; text-decoration:underline; text-decoration-color:var(--serious); text-decoration-thickness:3px; text-underline-offset:3px;">really</em> going?</h1>
+    <p class="lede" id="t-s3-lede">Ministry is not a spreadsheet. In your own words — a sentence or a page:</p>
+    <div class="prompts">
+      <span id="t-p-q1">Where are you struggling?</span><span id="t-p-q2">What are you working on?</span><span id="t-p-q3">What’s been hard?</span><span id="t-p-q4">Who’s been hard?</span><span id="t-p-q5">What are you hoping for?</span>
+    </div>
+    <textarea id="heart" placeholder="Honestly, this semester has been…"></textarea>
+    <div class="hint" id="t-s3-hint">🔒 Stays private to you. The coach reads it to ask you better questions — that’s all it’s for.</div>
+    <div class="btnrow">
+      <button class="btn ghost t-back" onclick="go(2)">← Back</button>
+      <button class="btn" id="t-reveal" onclick="finishOnboarding()">Show me my map ✨</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ THE APP ═══════════════ -->
+<div class="wrap wide" id="app" style="display:none">
+  <header>
+    <div class="eyebrow" id="hdr-eyebrow">Youth Leader Home</div>
+    <h1 id="app-title">Your group</h1>
+    <div class="meta" id="hdr-meta"></div>
+  </header>
+
+  <!-- ─────── HOME (curated landing) ─────── -->
+  <div id="home-view">
+    <div class="card">
+      <div class="team-row" id="home-team"></div>
+    </div>
+
+    <h2>Where to put your time this week</h2>
+    <p class="lede">Three things, drawn from your map. Not a to-do list — a focus list.</p>
+    <div class="card" id="home-focus"></div>
+
+    <h2>Coming up</h2>
+    <div class="card" id="home-events"></div>
+    <div class="addrow" id="event-add">
+      <input id="ev-name" placeholder="Add an event — e.g. Weekend retreat" style="flex:2 1 180px">
+      <input id="ev-date" type="date" style="flex:1 1 120px; font-size:13px; padding:8px 10px; border-radius:10px; border:1.5px solid var(--grid); background:var(--page); color:var(--ink); font-family:inherit;">
+      <button class="btn ghost" onclick="addEvent()">+ Add</button>
+    </div>
+
+    <h2>Ministry Map</h2>
+    <div class="card mapmod" onclick="openMap('today')">
+      <div style="font-size:13px; color:var(--ink2);" id="mapmod-sub"></div>
+      <div class="strip" id="mapmod-strip"></div>
+      <div class="open">Open the Ministry Map → <span class="cbadge" id="mapmod-badge" style="display:none"></span><span style="margin-left:auto; font-weight:400; color:var(--muted); font-size:11.5px;" id="mapmod-note"></span></div>
+    </div>
+  </div>
+
+  <!-- ─────── MINISTRY MAP (module) ─────── -->
+  <div id="map-view" style="display:none">
+  <button class="backlink" onclick="goHome()">← Back to your home page</button>
+  <nav class="tabs">
+    <button class="tab active" data-pane="today">Today</button>
+    <button class="tab" data-pane="checkin">✏️ Check-in</button>
+    <button class="tab" data-pane="movement">Movement</button>
+    <button class="tab" data-pane="coach">Coach <span class="badge" id="coach-n"></span></button>
+  </nav>
+
+  <div class="pane active" id="pane-today">
+    <h2 id="today-h2">Where your group stands</h2>
+    <p class="lede" id="today-lede">From your last check-in. ↑ stepped forward since the one before · ↓ stepped back · ✦ new.</p>
+    <div id="unsaved-banner"></div>
+    <div class="zones" id="today-zones"></div>
+    <div id="progs-section">
+      <h2>Your environments</h2>
+      <p class="lede" id="progs-lede">What you run, under the zone it serves. Zones with people but no environment are flagged.</p>
+      <div class="zones" id="today-progs"></div>
+    </div>
+  </div>
+
+  <div class="pane" id="pane-checkin">
+    <h2>Where is each one today?</h2>
+    <p class="lede">Go with your gut — you know them. Slide each dot to where they really are on the road, even if that’s “almost.” The dashed ring is where they were last time. If someone has left the group, use “Stopped coming?” on their row; add anyone new at the bottom.</p>
+    <div class="card" id="checkin-list"></div>
+    <div class="addrow">
+      <input id="new-name" placeholder="New students — one name, or several separated by commas…">
+      <button class="btn ghost" onclick="addStudent()">+ Add</button>
+    </div>
+    <label style="margin-top:18px">And you — how has it really been since last time? <span style="font-weight:400; color:var(--muted)">(optional, private)</span></label>
+    <textarea id="checkin-heart" style="min-height:80px" placeholder="What’s been hard? Who’s been hard? What are you hoping for?"></textarea>
+    <div class="savebar">
+      <button class="btn" onclick="saveCheckin()">Save check-in ✓</button>
+    </div>
+  </div>
+
+  <div class="pane" id="pane-movement">
+    <h2>Your group over time</h2>
+    <p class="lede">Every check-in, side by side. Watch the deep blue grow — that’s the goal: not a bigger group, a deeper one.</p>
+    <div class="card" id="history"></div>
+    <h2 id="mv-title">Since your last check-in</h2>
+    <div class="card" id="moves"></div>
+  </div>
+
+  <div class="pane" id="pane-coach">
+    <h2>Questions worth sitting with</h2>
+    <p class="lede">Generated from your group’s actual movement and your own words — not generic advice. Bring these to prayer and to your co-leaders.</p>
+    <div id="coach-list"></div>
+    <div class="ai-note">🤖 In the full version, these questions are written by AI reading your whole history — your notes, each student’s journey, your programs — and they get more personal with every check-in. This prototype shows the kind of questions it asks.</div>
+  </div>
+  </div><!-- /map-view -->
+</div>
+
+<div id="tip"></div>
+
+<script>
+// ═══════════ shared model ═══════════
+const ZONES = [
+  { key:'CS',   name:'COME & SEE',       sub:'curious',   c:'var(--z1)' },
+  { key:'RB',   name:'REPENT & BELIEVE', sub:'crossing into faith', c:'var(--z2)' },
+  { key:'FM',   name:'FOLLOW ME',        sub:'growing',   c:'var(--z3)' },
+  { key:'FISH', name:'FISH FOR PEOPLE',  sub:'ministering', c:'var(--z4)' },
+  { key:'SEND', name:'SENDING YOU',      sub:'leading',   c:'var(--z5)' },
+];
+const ZFROM = [0, 25, 50, 75, 95];
+const MSTONES = [
+  { name:'Repent & believe', at:25, ask:'talk & pray with them about believing' },
+  { name:'Follow me',        at:50, ask:'invite them into the habits of a disciple' },
+  { name:'Fish for people',  at:75, ask:'give them someone to serve' },
+  { name:'Sending you',      at:95, ask:'prepare to send them out' },
+];
+
+// ═══════════ languages ═══════════
+// Zone/milestone names live on the data objects; setLang() swaps them and re-renders.
+// The AI coach responds in the leader's language natively in the full version, so coach
+// text is not dictionary-translated here.
+let LANG = 'en';
+const L10N = {
+  cs: {
+    zones: [
+      { name:'POJĎ A UVIDÍŠ', sub:'zvědaví' },
+      { name:'ČIŇ POKÁNÍ A VĚŘ', sub:'vstupují do víry' },
+      { name:'NÁSLEDUJ MĚ', sub:'rostou' },
+      { name:'RYBÁŘI LIDÍ', sub:'slouží' },
+      { name:'POSÍLÁM VÁS', sub:'vedou' },
+    ],
+    mstones: [
+      { name:'Čiň pokání a věř', ask:'mluv s nimi a modli se za jejich víru' },
+      { name:'Následuj mě', ask:'pozvi je do návyků učedníka' },
+      { name:'Rybáři lidí', ask:'dej jim někoho, komu mohou sloužit' },
+      { name:'Posílám vás', ask:'připrav je k vyslání' },
+    ],
+    quotes: ['„Pojďte a uvidíte.“','„Čiňte pokání a věřte evangeliu.“','„Pojď za mnou.“','„Učiním z vás rybáře lidí.“','„Jako mne poslal Otec, tak já posílám vás.“'],
+    tabs: { today:'Dnes', checkin:'✏️ Check-in', movement:'Pohyb', coach:'Kouč' },
+    strings: {
+      't-title':'Dívej se na svou skupinu očima Pastýře.',
+      't-lede':'Ježíš povolával lidi krok za krokem. Ministry mapa je jednoduše tvoje skupina, rozložená podél této cesty — abys viděl, kde každý mladý člověk skutečně je a co potřebuje dál.',
+      't-p1':'<b>Uvidíš všechny najednou.</b> Každý student na své cestě — celá skupina v jednom obrazu.',
+      't-p2':'<b>Uvidíš, jak se pohybují.</b> Vrať se kdykoli; mapa si pamatuje a ukáže, kdo od minula udělal krok.',
+      't-p3':'<b>Dostaneš otázky, za které stojí za to se modlit.</b> Žádné obecné rady — otázky z tvé skupiny a tvých vlastních slov.',
+      't-reassure':'🔒 Tohle není vysvědčení a nikdo tě neznámkuje. Tvoje mapa patří tobě. Jen ty rozhoduješ, co sdílíš.',
+      't-start':'Zmapovat moji skupinu →', 't-time':'⏱ asi 10 minut', 'code-entry':'Vracíš se? Zadej kód skupiny',
+      't-s1-eyebrow':'Krok 1 ze 3', 't-s1-title':'Tvoje skupina',
+      't-s1-l1':'Jak se vaše skupina jmenuje?', 't-s1-l2':'Kdo ji vede s tebou?',
+      't-s1-hint':'Kouč i celá aplikace ti budou odpovídat česky.',
+      't-back':'← Zpět', 't-s1-next':'Dál: tvoji lidé →', 't-demo':'nebo vyzkoušej demo skupinu Frýdlant',
+      't-s2-eyebrow':'Krok 2 ze 3', 't-s2-title':'Tvoji lidé',
+      't-s2-lede':'Přidej je, jak je ti to nejpřirozenější — čárkami, nebo každé jméno na nový řádek. Pak posuň tečku tam, kde na cestě opravdu jsou, klidně „skoro“. Věř svému instinktu; všechno jde později změnit.',
+      't-addnames':'Přidat tato jména ↓', 't-import':'📄 Import CSV / Excel',
+      'import-msg':'Už máš seznam? Naimportuj ho — jména načteme z prvního sloupce (nebo ze sloupce „Jméno“).',
+      't-s2-next':'Dál: jak to doopravdy jde →',
+      't-s3-eyebrow':'Krok 3 ze 3',
+      't-s3-title':'Než přijdou čísla — jak to <em style="font-style:normal; text-decoration:underline; text-decoration-color:var(--serious); text-decoration-thickness:3px; text-underline-offset:3px;">doopravdy</em> jde?',
+      't-s3-lede':'Služba není tabulka. Vlastními slovy — věta nebo celá stránka:',
+      't-heart-ph':'Upřímně, tenhle semestr byl…',
+      't-s3-hint':'🔒 Zůstává jen tobě. Kouč to čte, aby se tě ptal lépe — nic víc.',
+      't-reveal':'Ukaž mi moji mapu ✨',
+      't-p-q1':'Kde se trápíš?', 't-p-q2':'Na čem pracuješ?', 't-p-q3':'Co bylo těžké?', 't-p-q4':'Kdo byl těžký?', 't-p-q5':'V co doufáš?',
+    },
+  },
+};
+function setLang(l) {
+  LANG = l; lsSet('mm-lang', l);
+  const pack = L10N[l];
+  const EN = {
+    zones:[{name:'COME & SEE',sub:'curious'},{name:'REPENT & BELIEVE',sub:'crossing into faith'},{name:'FOLLOW ME',sub:'growing'},{name:'FISH FOR PEOPLE',sub:'ministering'},{name:'SENDING YOU',sub:'leading'}],
+    mstones:[{name:'Repent & believe',ask:'talk & pray with them about believing'},{name:'Follow me',ask:'invite them into the habits of a disciple'},{name:'Fish for people',ask:'give them someone to serve'},{name:'Sending you',ask:'prepare to send them out'}],
+    tabs:{today:'Today',checkin:'✏️ Check-in',movement:'Movement',coach:'Coach'},
+  };
+  const src = pack || EN;
+  (src.zones||EN.zones).forEach((z,i)=>{ ZONES[i].name=z.name; ZONES[i].sub=z.sub; });
+  (src.mstones||EN.mstones).forEach((m,i)=>{ MSTONES[i].name=m.name; MSTONES[i].ask=m.ask; });
+  if (pack) {
+    for (const id in pack.strings) { const el=$(id); if (el) el.innerHTML = pack.strings[id]; }
+    document.querySelectorAll('.t-back').forEach(el=>el.textContent='← Zpět');
+    const hp=$('heart'); if (hp) hp.placeholder = pack.strings['t-heart-ph'] || hp.placeholder;
+    pack.quotes.forEach((q,i)=>{ const el=document.querySelectorAll('.line-cols .q')[i]; if (el) el.textContent = q; });
+    document.querySelectorAll('.line-cols .t').forEach((el,i)=>{ el.textContent = pack.zones[i].name.charAt(0)+pack.zones[i].name.slice(1).toLowerCase(); });
+  }
+  const tabs = (pack&&pack.tabs)||EN.tabs;
+  document.querySelectorAll('.tab').forEach(t=>{
+    const k = t.dataset.pane;
+    t.innerHTML = tabs[k] + (k==='coach' ? ' <span class="badge" id="coach-n"></span>' : '');
+  });
+  if (snapshots.length) renderAll();
+  if (draft) renderCheckin();
+  renderPlacer();
+}
+function zoneOf(v){ let z=0; ZFROM.forEach((f,i)=>{ if (v>=f) z=i; }); return z; }
+function hashN(n){ let h=0; for (const c of n) h=(h*31+c.charCodeAt(0))%997; return h; }
+
+let group = { name:'', leaders:'' };
+let snapshots = [];   // { date, label, students:{name:pos}, demo? }
+let notes = [];       // { date, text }
+let PROGRAMS = [];    // { name, cad, zone } — demo only for now
+let EVENTS = [];      // { name, date, zone? }
+let people = [];      // onboarding working list {n, v}
+let draft = null;     // check-in working copy
+let step = 0;
+
+// ═══════════ cloud sync (Netlify function → Airtable) ═══════════
+const API = '/api';
+let cloud = { on:false, code:null };
+function lsGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function lsSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+async function api(path, body){
+  const r = await fetch(API+path, body ? { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) } : undefined);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function boot(){
+  const savedLang = lsGet('mm-lang');
+  if (savedLang && savedLang !== 'en') {
+    const sel = $('langsel'); if (sel) sel.value = savedLang;
+    setLang(savedLang);
+  }
+  if (location.protocol === 'file:') return;
+  try {
+    const h = await api('/health');
+    if (!h.configured) return;
+    cloud.on = true;
+    const code = new URLSearchParams(location.search).get('code') || lsGet('mm-code');
+    if (code) { await loadCloud(code); return; }
+    const el = document.getElementById('code-entry');
+    if (el) el.style.display = 'inline';
+  } catch(e) { /* no backend — run local */ }
+}
+async function loadCloud(code){
+  try {
+    const s = await api('/state?code='+encodeURIComponent(code));
+    group = s.group; snapshots = s.snapshots; notes = s.notes;
+    EVENTS = s.events; PROGRAMS = s.programs;
+    cloud.code = code; lsSet('mm-code', code);
+    if (snapshots.length) enterApp();
+  } catch(e) { alert('Could not find a group for that code.'); }
+}
+function enterCode(){
+  const code = prompt('Enter your group code:');
+  if (code) loadCloud(code.trim());
+}
+function cloudSave(path, body){
+  if (cloud.on && cloud.code) api(path, { code: cloud.code, ...body }).catch(err=>console.warn('cloud save failed', err));
+}
+
+const $ = id => document.getElementById(id);
+const last = () => snapshots[snapshots.length-1];
+const prev = () => snapshots.length>1 ? snapshots[snapshots.length-2] : null;
+const fmtDate = d => new Date(d+'T12:00:00').toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+
+// ═══════════ onboarding ═══════════
+function go(s) { step = s;
+  document.querySelectorAll('#onb .screen').forEach(el=>el.classList.toggle('active', +el.dataset.s===s));
+  $('dots').innerHTML = [0,1,2,3].map(i=>`<i class="${i===s?'on':''}"></i>`).join('');
+  window.scrollTo(0,0);
+}
+go(0);
+
+function parseNames() {
+  const lines = $('names').value.split(/[\n,;]+/).map(s=>s.trim()).filter(Boolean);
+  addPeople(lines);
+  $('names').value = '';
+}
+function addPeople(names) {
+  let added = 0;
+  names.forEach(n=>{ if (n && !people.find(p=>p.n===n)) { people.push({ n, v:10 }); added++; } });
+  renderPlacer();
+  return added;
+}
+
+// ---- CSV / Excel import ----
+function importFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const msg = $('import-msg');
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'xlsx' || ext === 'xls') {
+    msg.textContent = 'Reading Excel file…';
+    loadSheetJS().then(()=>{
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const wb = XLSX.read(new Uint8Array(e.target.result), { type:'array' });
+          const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1 });
+          finishImport(rows.map(r=>r.map(c=>String(c??''))), file.name);
+        } catch(err) { msg.textContent = '⚠ Could not read that file — try exporting it as CSV and importing again.'; }
+      };
+      reader.readAsArrayBuffer(file);
+    }).catch(()=>{ msg.textContent = '⚠ Excel reader couldn’t load (offline?). Export as CSV and import that instead.'; });
+  } else {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const text = e.target.result;
+      const delim = (text.split('\n')[0].match(/;/g)||[]).length > (text.split('\n')[0].match(/,/g)||[]).length ? ';' : (text.includes('\t') && !text.split('\n')[0].includes(',') ? '\t' : ',');
+      const rows = text.split(/\r?\n/).filter(l=>l.trim()).map(line=>parseCSVLine(line, delim));
+      finishImport(rows, file.name);
+    };
+    reader.readAsText(file);
+  }
+  input.value = '';
+}
+function parseCSVLine(line, delim) {
+  const out = []; let cur = '', inQ = false;
+  for (let i=0; i<line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { if (inQ && line[i+1]==='"') { cur+='"'; i++; } else inQ = !inQ; }
+    else if (ch === delim && !inQ) { out.push(cur); cur=''; }
+    else cur += ch;
+  }
+  out.push(cur);
+  return out.map(c=>c.trim());
+}
+function finishImport(rows, fname) {
+  if (!rows.length) { $('import-msg').textContent = '⚠ That file looks empty.'; return; }
+  // find the name column: a header cell matching name-ish words, else column 0
+  const header = rows[0].map(c=>c.toLowerCase());
+  let col = header.findIndex(h=>/^(name|names|student|jm[ée]no|imi[eę]|ім'?я|meno|nume|име)/.test(h));
+  let start = 0;
+  if (col >= 0) start = 1; else {
+    col = 0;
+    // still skip row 0 if it looks like a header (other cells match common roster headers)
+    if (header.some(h=>/age|school|believer|year|zone|stage|v[eě]k|escuela|škola/.test(h))) start = 1;
+  }
+  const names = rows.slice(start).map(r=>r[col]).filter(n=>n && n.length<60);
+  const added = addPeople(names);
+  $('import-msg').textContent = added
+    ? `✓ Imported ${added} ${added===1?'name':'names'} from ${fname} — now slide each one to where they are.`
+    : '⚠ No new names found — check that the names are in the first column, or a column titled “Name.”';
+}
+function loadSheetJS() {
+  if (window.XLSX) return Promise.resolve();
+  return new Promise((res, rej)=>{
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+// ---- placement sliders ----
+function placerHint(p) {
+  const next = MSTONES.find(m=>m.at > p.v);
+  if (next && next.at - p.v <= 6) return { cls:'near', txt:'nearing “'+next.name+'” — '+next.ask };
+  return { cls:'', txt:ZONES[zoneOf(p.v)].name.toLowerCase() };
+}
+function renderPlacer() {
+  const rows = people.map((p,i)=>{
+    const z = zoneOf(p.v), h = placerHint(p);
+    return `<div class="jrow">
+      <div class="jhead">
+        <span class="jname">${p.n}</span>
+        <span class="zl" id="pzl-${i}" style="color:${ZONES[z].c}">● ${ZONES[z].name}</span>
+        <button class="rmbtn" title="Remove" onclick="people.splice(${i},1);renderPlacer()">✕</button>
+      </div>
+      <div class="slider">
+        <div class="srail"></div>
+        ${MSTONES.map(m=>`<span class="mstone" style="left:${m.at}%"></span>`).join('')}
+        <input type="range" min="0" max="100" step="0.5" value="${p.v}"
+          style="--tc:${ZONES[z].c}" oninput="updP(${i}, this)">
+      </div>
+      <div class="jhint ${h.cls}" id="phint-${i}">${h.txt}</div>
+    </div>`;
+  }).join('');
+  $('placer').innerHTML = people.length
+    ? `<div class="keyline">${ZONES.map(z=>`<div>${z.name}</div>`).join('')}</div>` + rows : '';
+}
+function updP(i, el) {
+  people[i].v = +el.value;
+  const z = zoneOf(people[i].v), h = placerHint(people[i]);
+  el.style.setProperty('--tc', ZONES[z].c);
+  const zl = $('pzl-'+i); zl.style.color = ZONES[z].c; zl.textContent = '● '+ZONES[z].name;
+  const hint = $('phint-'+i); hint.className = 'jhint '+h.cls; hint.textContent = h.txt;
+}
+
+// ---- demo group (Frýdlant, with two earlier check-ins of history) ----
+function demo() {
+  group = { name:'Frýdlant mládež', leaders:'Katka & Boža' };
+  $('gname').value = group.name; $('gleaders').value = group.leaders;
+  const Z = (names, z) => Object.fromEntries(names.split(',').map(n=>[n, z===4 ? 95+(hashN(n)%5) : [12,32,60,82][z] + (hashN(n)%9) - 4]));
+  snapshots = [
+    { date:'2025-07-06', label:'Jul 2025', demo:true, students:{
+      ...Z('Honza D.,Kuba,Marek M.,Radka,Jonáš,Josefka,Adam,Tomáš',0),
+      ...Z('Kača,Jaroslav,Jindra,Aneta,Marie K.,Honza B.,Robert,Svata,Caleb,Claire,Lucy,Honza K.',2),
+      ...Z('Matěj',3) }},
+    { date:'2026-01-18', label:'Jan 2026', demo:true, students:{
+      ...Z('Honza D.,Kača,Kuba,Marek M.,Radka,Jonáš,Josefka,Adam,Bára',0),
+      ...Z('Jaroslav,Jindra,Aneta,Marie K.,Honza B.,Robert,Svata,Claire,Paul,Gabriel,Marie H.,Klára,Mája,Marek Mad.,Michal',2),
+      ...Z('Caleb,Lucy,Honza K.',3),
+      ...Z('Matěj',4) }},
+    { date:'2026-07-26', label:'Jul 2026', students:{
+      ...Z('Krista,Adam,Bára,Jonáš,Josefka,Martina,Kača,Jaroslav,Kuba,Marek M.,Radka',0),
+      ...Z('Honza D.',1),
+      ...Z('Paul,Jindra,Gabriel,Marie H.,Klára,Aneta,Mája,Marek Mad.,Marie K.,Honza B.,Robert,Svata',2),
+      ...Z('Caleb,Claire,Lucy,Honza K.,Michal',3),
+      ...Z('Matěj',4) }},
+  ];
+  snapshots[2].students['Adam'] = 21; // pressing up against "Repent & believe"
+  notes = [{ date:'2026-07-26', text:'Honestly this semester has been heavy. Kača has been really hard — she’s been with us four years and now she seems against everything. We keep running the programs but I feel like it all depends on me and Boža. Camp was amazing though — 60 kids came. I just don’t know how to get them from camp into the group.' }];
+  EVENTS = [
+    { name:'English Camp', date:'2026-08-10', zone:'Come & See — your big open door' },
+    { name:'Camp follow-up night', date:'2026-08-28', zone:'the bridge from camp into the group' },
+    { name:'Weekend retreat', date:'2026-10-02', zone:'Come & See' },
+  ];
+  PROGRAMS = [
+    { name:'English Camp', cad:'yearly', zone:0 },
+    { name:'Thanksgiving outreach', cad:'yearly', zone:0 },
+    { name:'Weekend retreats', cad:'2×/yr', zone:0 },
+    { name:'Wednesday youth group', cad:'2×/mo', zone:2 },
+    { name:'Guys/girls groups', cad:'2×/mo', zone:2 },
+    { name:'Houba team training', cad:'quarterly', zone:3 },
+  ];
+  enterApp();
+}
+
+async function finishOnboarding() {
+  group.name = $('gname').value.trim() || 'My youth group';
+  group.leaders = $('gleaders').value.trim();
+  if (!people.length) { alert('Add at least one name on the previous step — or use the Frýdlant demo group.'); return; }
+  const today = new Date();
+  const students = {};
+  people.forEach(p=>students[p.n]=p.v);
+  snapshots = [{ date: today.toISOString().slice(0,10),
+    label: today.toLocaleDateString('en-GB',{month:'short',year:'numeric'}), students }];
+  const heart = $('heart').value.trim();
+  if (heart) notes.push({ date: today.toISOString().slice(0,10), text: heart });
+  if (cloud.on) {
+    try {
+      const res = await api('/bootstrap', { group, students, note: heart, language: LANG==='cs'?'Čeština':'English' });
+      cloud.code = res.code; lsSet('mm-code', res.code);
+      alert(`Your group is saved. ☁\n\nYour group code is:  ${res.code}\n\nWrite it down — it’s how you (or a co-leader) get back to your map from any device.`);
+    } catch(e) { alert('Saved locally — the cloud backend isn’t reachable right now.'); }
+  }
+  enterApp(true);
+}
+
+function enterApp(firstTime) {
+  $('onb').style.display = 'none';
+  $('app').style.display = 'block';
+  $('app-title').textContent = group.name || 'Your group';
+  if (firstTime) {
+    $('today-h2').textContent = `Here they are — your ${Object.keys(last().students).length}.`;
+    $('today-lede').textContent = 'Every name, on the journey. This is the picture you’ll watch change over the year — come back anytime and “Check-in” to update it.';
+  }
+  renderAll();
+  if (firstTime) openMap('today'); else goHome();
+}
+
+// ═══════════ HOME (curated landing) ═══════════
+function goHome() {
+  $('home-view').style.display = 'block';
+  $('map-view').style.display = 'none';
+  $('hdr-eyebrow').textContent = 'Youth Leader Home';
+  renderHome();
+  window.scrollTo(0,0);
+}
+function openMap(tab) {
+  $('home-view').style.display = 'none';
+  $('map-view').style.display = 'block';
+  $('hdr-eyebrow').textContent = 'Ministry Map';
+  switchTab(tab || 'today');
+}
+const AV_COLORS = ['var(--z3)','var(--z4)','var(--z2)','var(--z5)'];
+function renderHome() {
+  // team
+  const members = (group.leaders || '').split(/[,&+\/]|\s+and\s+|\s+a\s+|\s+i\s+/).map(s=>s.trim()).filter(Boolean);
+  $('home-team').innerHTML = (members.length ? members.map((m,i)=>`
+    <div class="member">
+      <div class="avatar" style="background:${AV_COLORS[i%AV_COLORS.length]}">${m.slice(0,1).toUpperCase()}</div>
+      <div><div class="mn">${m}</div><div class="mr">${i===0?'leader':'co-leader'}</div></div>
+    </div>`).join('') : '<div style="font-size:13px;color:var(--muted)">Add your team in setup — leading alone is the first thing to fix. 🙂</div>')
+    + `<div style="margin-left:auto; font-size:11px; color:var(--muted)">📷 photos come with the full version</div>`;
+
+  // focus — max three things, drawn from the map
+  const a = prev(), b = last(), d = diff(a,b);
+  const focus = [];
+  const crossed = d.fwd.find(n=>zoneOf(b.students[n])===1);
+  if (crossed) focus.push({ i:'🎉', t:`<b>Celebrate ${crossed}</b> — they crossed into faith. Mark it this week.`, w:'from your last check-in' });
+  else if (d.fwd.length) focus.push({ i:'🎉', t:`<b>Celebrate ${d.fwd[0]}</b> — they stepped forward to ${ZONES[zoneOf(b.students[d.fwd[0]])].name.toLowerCase()}. Tell them you noticed.`, w:'from your last check-in' });
+  const care = d.back[0] || (stuckList()[0] && stuckList()[0].n);
+  if (care) focus.push({ i:'🧡', t:`<b>Go find ${care}</b> — one conversation about life, not attendance.`, w: d.back.length ? 'they stepped back on the map' : 'no movement across a year of check-ins' });
+  const lean = Object.entries(b.students).map(([n,v])=>({ n, v, next:MSTONES.find(m=>m.at>v) }))
+    .filter(x=>x.next && x.next.at-x.v<=6).sort((x,y)=>(x.next.at-x.v)-(y.next.at-y.v))[0];
+  if (lean) focus.push({ i:'🙏', t:`<b>Pray with ${lean.n}</b> toward “${lean.next.name}” — they may be one conversation away.`, w:'closest to a milestone on your map' });
+  if (focus.length < 3 && d.joined.length) focus.push({ i:'✦', t:`<b>Befriend ${d.joined[0]}</b> — new people decide in their first month whether they belong.`, w:'newest on the map' });
+  $('home-focus').innerHTML = focus.slice(0,3).map(f=>`
+    <div class="focus-row"><span class="fi">${f.i}</span><div><div class="ft">${f.t}</div><div class="fw">${f.w}</div></div></div>`).join('')
+    || '<div class="focus-row"><span class="fi">🌱</span><div class="ft">Do your first check-in and this list will fill itself.</div></div>';
+
+  // events
+  const upcoming = EVENTS.slice().sort((x,y)=>x.date.localeCompare(y.date));
+  $('home-events').innerHTML = upcoming.length ? upcoming.map(e=>{
+    const dt = new Date(e.date+'T12:00:00');
+    return `<div class="evrow">
+      <div class="ed"><div class="em">${dt.toLocaleDateString('en-GB',{month:'short'})}</div><div class="eday">${dt.getDate()}</div></div>
+      <div><div class="en">${e.name}</div>${e.zone?`<div class="ez">serves: ${e.zone}</div>`:''}</div>
+    </div>`;
+  }).join('') : '<div style="font-size:13px; color:var(--muted); padding:4px 0;">Nothing on the calendar yet — add your next gathering below.</div>';
+
+  // ministry map module
+  const counts = ZONES.map((z,i)=>Object.values(b.students).filter(v=>zoneOf(v)===i).length);
+  const n = Object.keys(b.students).length;
+  $('mapmod-sub').innerHTML = `<strong style="color:var(--ink)">${n} young people on the journey.</strong> Last check-in ${fmtDate(b.date)}.`;
+  $('mapmod-strip').innerHTML = counts.map((c,i)=>c?`<span class="${i<2?'lt':''}" style="flex:${c}; background:${ZONES[i].c}" data-tip="${ZONES[i].name}: ${c}">${c}</span>`:'').join('');
+  const nq = document.querySelectorAll('#coach-list .coach-card').length;
+  const badge = $('mapmod-badge');
+  if (nq) { badge.style.display='inline-block'; badge.textContent = nq; $('mapmod-note').textContent = nq+' questions waiting in Coach'; }
+  else { badge.style.display='none'; $('mapmod-note').textContent = ''; }
+}
+function addEvent() {
+  const name = $('ev-name').value.trim(), date = $('ev-date').value;
+  if (!name || !date) return;
+  EVENTS.push({ name, date });
+  cloudSave('/event', { name, date });
+  $('ev-name').value = ''; $('ev-date').value = '';
+  renderHome();
+}
+
+// ═══════════ TODAY ═══════════
+function draftSnapshot() {
+  const students = {};
+  draft.filter(s=>!s.gone).forEach(s=>students[s.n]=s.v);
+  return { students };
+}
+function draftDirty() {
+  if (!draft) return false;
+  return draft.some(s=>s.gone || s.prev==null || Math.abs(s.v-s.prev)>=0.5);
+}
+function renderToday() {
+  const dirty = draftDirty();
+  const cur = dirty ? draftSnapshot() : last();
+  const d = diff(dirty ? last() : prev(), cur);
+  $('unsaved-banner').innerHTML = dirty
+    ? `<div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:10px; font-size:12.5px;
+        padding:10px 14px; border:1.5px solid var(--warning); border-radius:10px; background:var(--surface); color:var(--ink2);">
+        <span>⏳ <strong style="color:var(--ink)">Showing your in-progress check-in.</strong> These changes aren’t saved to your group’s history yet.</span>
+        <button class="btn" style="margin-left:auto; padding:7px 14px; font-size:12.5px;" onclick="saveCheckin()">Save check-in ✓</button>
+      </div>`
+    : '';
+  $('hdr-meta').textContent = `${group.leaders? group.leaders+' · ':''}${Object.keys(last().students).length} students · last check-in ${fmtDate(last().date)} · ${snapshots.length} check-in${snapshots.length===1?'':'s'} logged` + (snapshots.some(s=>s.demo)?' · earlier check-ins are demo history':'') + (cloud.code?' · ☁ synced (code '+cloud.code+')':(cloud.on?'':' · local only'));
+  $('today-zones').innerHTML = ZONES.map((z,i)=>{
+    const names = Object.keys(cur.students).filter(n=>zoneOf(cur.students[n])===i).sort();
+    return `<div class="zcol" style="border-top-color:${z.c}">
+      <h4>${z.name}</h4>
+      <div class="zc">${names.length} <small>${z.sub}</small></div>
+      ${names.map(n=>{
+        const cls = d.fwd.includes(n)?'up':d.back.includes(n)?'down':d.joined.includes(n)?'new':'';
+        return `<span class="nm ${cls}">${n}</span>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+  if (!PROGRAMS.length) {
+    $('progs-lede').innerHTML = 'You haven’t mapped your programs yet. In the full version you’d list what you run — camps, weekly nights, trainings — under the zone each one serves, and the coach flags the zones nothing serves.';
+    $('today-progs').innerHTML = '';
+    return;
+  }
+  $('progs-lede').textContent = 'What you run, under the zone it serves. Zones with people but no environment are flagged.';
+  $('today-progs').innerHTML = ZONES.map((z,i)=>{
+    const ps = PROGRAMS.filter(p=>p.zone===i);
+    const hasPeople = Object.values(cur.students).some(v=>zoneOf(v)===i);
+    return `<div class="zcol" style="border-top-color:${z.c}; min-height:60px;">
+      <h4>${z.name}</h4>
+      ${ps.length? ps.map(p=>`<span class="nm">${p.name} <span style="color:var(--muted)">· ${p.cad}</span></span>`).join('')
+        : `<div class="zempty">${hasPeople? '⚠ people here, but nothing serves them':'—'}</div>`}
+    </div>`;
+  }).join('');
+}
+
+// ═══════════ diff / stuck ═══════════
+function diff(a, b) {
+  const out = { fwd:[], back:[], joined:[], left:[], same:[], grew:[] };
+  if (!a) { Object.keys(b.students).forEach(n=>out.joined.push(n)); return out; }
+  for (const n in b.students) {
+    if (!(n in a.students)) out.joined.push(n);
+    else {
+      const za = zoneOf(a.students[n]), zb = zoneOf(b.students[n]);
+      if (zb > za) out.fwd.push(n);
+      else if (zb < za) out.back.push(n);
+      else if (b.students[n] - a.students[n] >= 3) out.grew.push(n);
+      else out.same.push(n);
+    }
+  }
+  for (const n in a.students) if (!(n in b.students)) out.left.push(n);
+  return out;
+}
+function stuckList() {
+  return Object.keys(last().students).filter(n=>{
+    const vs = snapshots.filter(s=>n in s.students).map(s=>s.students[n]);
+    const zs = vs.map(zoneOf);
+    return zs.length>=3 && zs.every(z=>z===zs[0]) && zs[0]<=2 && (Math.max(...vs)-Math.min(...vs) < 4);
+  }).map(n=>({ n, z:zoneOf(last().students[n]) }));
+}
+function stuckByZone() {
+  const byZone = {};
+  stuckList().forEach(s=>{ (byZone[s.z] = byZone[s.z]||[]).push(s.n); });
+  return Object.entries(byZone).map(([z,names])=>({ z:+z, names }));
+}
+
+// ═══════════ CHECK-IN ═══════════
+function startDraft() {
+  if (!draft) draft = Object.entries(last().students).map(([n,v])=>({ n, v, prev:v, gone:false }));
+  renderCheckin();
+}
+function sliderHint(s) {
+  if (s.prev==null) return { cls:'still', txt:'new — place them on the road' };
+  const z = zoneOf(s.v), zp = zoneOf(s.prev);
+  if (z > zp) return { cls:'crossed', txt:'crossed “'+ZONES[z].name.toLowerCase()+'” — you’ll confirm on save 🎉' };
+  if (z < zp) return { cls:'near', txt:'moved back across “'+ZONES[zp].name.toLowerCase()+'” — go find them' };
+  const next = MSTONES.find(m=>m.at > s.v);
+  if (next && next.at - s.v <= 6) return { cls:'near', txt:'nearing “'+next.name+'” — '+next.ask };
+  if (Math.abs(s.v - s.prev) < 2) return { cls:'still', txt:'same as last check-in' };
+  if (s.v > s.prev) return { cls:'crossed', txt:'growing within '+ZONES[z].name.toLowerCase() };
+  return { cls:'still', txt:'drifting back within '+ZONES[z].name.toLowerCase() };
+}
+function renderCheckin() {
+  $('checkin-list').innerHTML = `<div class="keyline">${ZONES.map(z=>`<div>${z.name}</div>`).join('')}</div>` +
+    draft.map((s,idx)=>{
+    const z = zoneOf(s.v), h = sliderHint(s);
+    if (s.gone) return `<div class="jrow gone">
+      <div class="jhead">
+        <span class="jname">${s.n}</span>
+        <button class="stopbtn" onclick="toggleGone(${idx})">↩ Undo — still coming</button>
+      </div>
+      <div class="gonemsg">Marked as no longer coming — they won’t be in this check-in.</div>
+    </div>`;
+    return `<div class="jrow">
+      <div class="jhead">
+        <span class="jname">${s.n}</span>
+        <span class="zl" id="zl-${idx}" style="color:${ZONES[z].c}">● ${ZONES[z].name}</span>
+        <button class="stopbtn" onclick="toggleGone(${idx})">Stopped coming?</button>
+      </div>
+      <div class="slider">
+        <div class="srail"></div>
+        ${MSTONES.map(m=>`<span class="mstone" style="left:${m.at}%"></span>`).join('')}
+        ${s.prev!=null?`<span class="gdot" style="left:${s.prev}%"></span>`:''}
+        <input type="range" min="0" max="100" step="0.5" value="${s.v}"
+          style="--tc:${ZONES[z].c}" oninput="updV(${idx}, this)">
+      </div>
+      <div class="jhint ${h.cls}" id="hint-${idx}">${h.txt}</div>
+    </div>`;
+  }).join('');
+}
+function updV(idx, el) {
+  draft[idx].v = +el.value;
+  const z = zoneOf(draft[idx].v), h = sliderHint(draft[idx]);
+  el.style.setProperty('--tc', ZONES[z].c);
+  const zl = $('zl-'+idx); zl.style.color = ZONES[z].c; zl.textContent = '● '+ZONES[z].name;
+  const hint = $('hint-'+idx); hint.className = 'jhint '+h.cls; hint.textContent = h.txt;
+}
+function toggleGone(idx) { draft[idx].gone = !draft[idx].gone; renderCheckin(); }
+function addStudent() {
+  const names = $('new-name').value.split(/[\n,;]+/).map(s=>s.trim()).filter(Boolean);
+  if (!names.length) return;
+  names.forEach(n=>{ if (!draft.find(s=>s.n===n)) draft.push({ n, v:10, prev:null, gone:false }); });
+  $('new-name').value = '';
+  renderCheckin();
+}
+function saveCheckin() {
+  for (const s of draft) {
+    if (!s.gone && s.prev!=null && zoneOf(s.prev)===0 && zoneOf(s.v)>=1) {
+      const yes = confirm(`${s.n} crossed “Repent & believe.”\n\nHas ${s.n} truly repented and believed? OK marks the crossing 🎉 — Cancel keeps them just before the milestone.`);
+      if (!yes) s.v = 23;
+    }
+  }
+  const students = {};
+  draft.filter(s=>!s.gone).forEach(s=>students[s.n]=s.v);
+  const today = new Date();
+  snapshots.push({ date: today.toISOString().slice(0,10),
+    label: today.toLocaleDateString('en-GB',{month:'short',year:'numeric'}), students });
+  const heart = $('checkin-heart').value.trim();
+  if (heart) notes.push({ date: today.toISOString().slice(0,10), text: heart });
+  cloudSave('/checkin', { students, note: heart });
+  $('checkin-heart').value = '';
+  draft = null;
+  renderAll();
+  switchTab('movement');
+}
+
+// ═══════════ MOVEMENT ═══════════
+function renderMovement() {
+  const total = Math.max(...snapshots.map(s=>Object.keys(s.students).length));
+  $('history').innerHTML = snapshots.map(s=>{
+    const counts = ZONES.map((z,i)=>Object.values(s.students).filter(v=>zoneOf(v)===i).length);
+    const n = Object.keys(s.students).length;
+    return `<div class="hist-row">
+      <div class="hd">${s.label}${s.demo?'<div style="font-weight:400;font-size:10px;color:var(--muted)">demo</div>':''}</div>
+      <div class="hbar" style="width:${n/total*100}%">
+        ${counts.map((c,i)=>c? `<span class="${i<2?'lt':''}" style="flex:${c}; background:${ZONES[i].c}"
+          data-tip="${ZONES[i].name}: ${c} of ${n}">${c}</span>`:'').join('')}
+      </div>
+    </div>`;
+  }).join('') + `<div class="legend">${ZONES.map(z=>`<span><i style="background:${z.c}"></i>${z.name}</span>`).join('')}</div>`;
+
+  const a = prev(), b = last(), d = diff(a,b);
+  $('mv-title').textContent = a ? `From ${a.label} to ${b.label}` : 'Your first check-in';
+  const rows = [];
+  d.fwd.forEach(n=>rows.push(`<div class="mv"><span class="ico">🎉</span><div><b>${n}</b> stepped forward <span class="path">${ZONES[zoneOf(a.students[n])].name} → ${ZONES[zoneOf(b.students[n])].name}</span><div class="q">Celebrate it with them — do they know you noticed?</div></div></div>`));
+  d.back.forEach(n=>rows.push(`<div class="mv"><span class="ico">🧡</span><div><b>${n}</b> stepped back <span class="path">${ZONES[zoneOf(a.students[n])].name} → ${ZONES[zoneOf(b.students[n])].name}</span><div class="q">Something changed in their life. Who’s closest to them?</div></div></div>`));
+  if (a) d.joined.forEach(n=>rows.push(`<div class="mv"><span class="ico">✦</span><div><b>${n}</b> is new <span class="path">arrived in ${ZONES[zoneOf(b.students[n])].name}</span><div class="q">Who is befriending them in their first month?</div></div></div>`));
+  d.left.forEach(n=>rows.push(`<div class="mv"><span class="ico">👋</span><div><b>${n}</b> no longer on the map<div class="q">Does anyone know why? One message this week.</div></div></div>`));
+  if (d.grew.length) rows.push(`<div class="mv"><span class="ico">📈</span><div><b>${d.grew.length} growing within their zone</b> <span class="path">${d.grew.join(', ')}</span><div class="q">Small steps count — tell them you see it.</div></div></div>`);
+  stuckByZone().forEach(g=>rows.push(`<div class="mv"><span class="ico">😴</span><div><b>${g.names.length} ${g.names.length===1?'student hasn’t':'students haven’t'} moved from ${ZONES[g.z].name}</b> across a year of check-ins <span class="path">${g.names.join(', ')}</span><div class="q">Each of them needs one named next step — and one person who owns it.</div></div></div>`));
+  $('moves').innerHTML = rows.length? rows.join('')
+    : `<div class="mv"><span class="ico">🌱</span><div>Your group is on the map. Come back after your next check-in and this page will show every move — forward, back, new, and missing.</div></div>`;
+}
+
+// ═══════════ COACH ═══════════
+function renderCoach() {
+  const a = prev(), b = last(), d = diff(a,b);
+  const cards = [];
+  const latestNote = notes[notes.length-1];
+  if (latestNote) {
+    const snippet = latestNote.text.length > 150 ? latestNote.text.slice(0,150)+'…' : latestNote.text;
+    cards.push({ t:'echo', k:'From your own words', p:'You named what’s heaviest yourself. In the full version, the coach reads this and asks about it directly — the burden you wrote down becomes the first conversation, not a footnote.', w:'', quote:'“'+snippet+'”' });
+  }
+  d.fwd.forEach(n=>{
+    if (zoneOf(b.students[n])===1) cards.push({t:'celebrate', k:'Celebrate', p:`${n} crossed into faith since your last check-in. Have you marked it — publicly, personally? What would make this moment unforgettable for them?`, w:`${n}: ${ZONES[zoneOf(a.students[n])].name} → ${ZONES[zoneOf(b.students[n])].name}`});
+    else cards.push({t:'celebrate', k:'Celebrate', p:`${n} moved to ${ZONES[zoneOf(b.students[n])].name}. What worked in their life — and can you name it so you can repeat it with someone else?`, w:`${n} stepped forward`});
+  });
+  d.back.forEach(n=>cards.push({t:'care', k:'Care', p:`${n} has moved backwards to ${ZONES[zoneOf(b.students[n])].name}. Before any program answer: when did you last talk with ${n.split(' ')[0]} one-on-one, about life and not about attendance?`, w:`${n}: ${ZONES[zoneOf(a.students[n])].name} → ${ZONES[zoneOf(b.students[n])].name}`}));
+  Object.entries(b.students)
+    .map(([n,v])=>({ n, v, next: MSTONES.find(m=>m.at>v) }))
+    .filter(x=>x.next && x.next.at - x.v <= 5)
+    .slice(0,3)
+    .forEach(x=>cards.push({t:'challenge', k:'Lean in', p:`${x.n} is pressing right up against “${x.next.name}.” This season, ${x.next.ask} — they may be one conversation away.`, w:`${x.n} sits ${Math.round(x.next.at - x.v)} steps from the milestone`}));
+  stuckByZone().forEach(g=>{
+    cards.push({t:'challenge', k:'Challenge', p:`${g.names.join(', ')} ${g.names.length===1?'has':'have'} been in ${ZONES[g.z].name} for a year of check-ins. Pick one — say, ${g.names[0]} — and answer honestly: what is their next step, and what would you try before the next check-in?`, w:`${g.names.length} in ${ZONES[g.z].name} with no movement across 3 check-ins`});
+  });
+  const ready = Object.keys(b.students).filter(n=>zoneOf(b.students[n])>=3).length;
+  const growing = Object.keys(b.students).filter(n=>zoneOf(b.students[n])===2).length;
+  if (ready>0 && growing/ready>1.5) cards.push({t:'challenge', k:'Challenge', p:`You have ${growing} students growing and ${ready} who can already minister. If each ministering student walked with just one or two growing ones, no one waits on you. Who gets asked first?`, w:`${growing} in Follow Me vs ${ready} in Fish/Sending`});
+  if (PROGRAMS.length) ZONES.forEach((z,i)=>{
+    const ppl = Object.values(b.students).filter(v=>zoneOf(v)===i).length;
+    if (ppl>0 && !PROGRAMS.some(p=>p.zone===i)) cards.push({t:'door', k:'Doorway', p:`${ppl===1?'One student stands':ppl+' students stand'} in ${z.name}, and nothing you run serves that zone. If someone wanted to take that step this month, where would it happen?`, w:`${z.name}: ${ppl} ${ppl===1?'person':'people'}, 0 environments`});
+  });
+  const seq = ['echo','celebrate','care','challenge','door'];
+  cards.sort((x,y)=>seq.indexOf(x.t)-seq.indexOf(y.t));
+  $('coach-list').innerHTML = cards.map(c=>`
+    <div class="coach-card ${c.t}">
+      <div class="kick">${c.k}</div>
+      <p>${c.p}</p>
+      ${c.quote?`<div class="quote">${c.quote}</div>`:''}
+      ${c.w?`<div class="why">Because: ${c.w}</div>`:''}
+    </div>`).join('') || '<div class="coach-card"><p>Check in a few times and the coach will have plenty to ask you.</p></div>';
+  $('coach-n').textContent = cards.length || '';
+}
+
+// ═══════════ tabs & init ═══════════
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.pane===name));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('active', p.id==='pane-'+name));
+  if (name==='checkin') startDraft();
+  if (name==='today') renderToday();  // reflect any in-progress check-in immediately
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>switchTab(t.dataset.pane)));
+function renderAll(){ renderToday(); renderMovement(); renderCoach(); }
+boot();
+
+// tooltip
+const tip = $('tip');
+document.addEventListener('mousemove', e=>{
+  const t = e.target.closest('[data-tip]');
+  if (t) { tip.textContent = t.dataset.tip; tip.style.opacity = 1;
+    tip.style.left = Math.min(e.clientX+12, innerWidth-250)+'px'; tip.style.top = (e.clientY+14)+'px';
+  } else tip.style.opacity = 0;
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ministry Map — JV Movement Dashboard</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --baseline:#c3c2b7; --border:rgba(11,11,11,0.10);
+    --z1:#86b6ef; --z2:#5598e7; --z3:#2a78d6; --z4:#1c5cab; --z5:#104281;
+    --accent:#2a78d6; --good:#0ca30c; --serious:#ec835a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { color-scheme:dark;
+      --page:#0d0d0d; --surface:#1a1a19; --ink:#fff; --ink2:#c3c2b7; --muted:#898781;
+      --grid:#2c2c2a; --baseline:#383835; --border:rgba(255,255,255,0.10);
+      --z1:#cde2fb; --z2:#9ec5f4; --z3:#6da7ec; --z4:#3987e5; --z5:#256abf; --accent:#3987e5; }
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:system-ui,-apple-system,"Segoe UI",sans-serif; background:var(--page); color:var(--ink);
+    line-height:1.5; padding-bottom:60px; }
+  .topbar { height:5px; background:linear-gradient(90deg,var(--z1),var(--z2),var(--z3),var(--z4),var(--z5)); }
+  .wrap { max-width:900px; margin:0 auto; padding:28px 18px 40px; }
+  .eyebrow { font-size:11px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:var(--accent); }
+  h1 { font-size:26px; font-weight:800; letter-spacing:-0.015em; line-height:1.15; margin-top:4px; }
+  .lede { font-size:13.5px; color:var(--ink2); margin-top:7px; max-width:74ch; }
+  .privacy { margin-top:14px; font-size:12.5px; color:var(--ink2); padding:11px 15px;
+    border:1.5px solid var(--z3); border-radius:12px; background:var(--surface); }
+  .privacy b { color:var(--ink); }
+  .demo-banner { margin-top:10px; font-size:12px; padding:8px 12px; border-radius:10px;
+    background:var(--surface); border:1px dashed var(--baseline); color:var(--muted); }
+  h2 { font-size:16px; font-weight:750; margin:30px 0 4px; display:flex; align-items:center; gap:8px; }
+  h2::before { content:''; width:4px; height:16px; border-radius:2px; background:linear-gradient(180deg,var(--z2),var(--z4)); }
+  .sub { font-size:12.5px; color:var(--muted); margin-bottom:10px; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px 18px; margin-top:10px; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-top:16px; }
+  .kpi { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 16px; }
+  .kpi .label { font-size:12px; color:var(--ink2); }
+  .kpi .value { font-size:27px; font-weight:650; margin-top:2px; }
+  .kpi .note { font-size:11.5px; color:var(--muted); margin-top:2px; }
+  /* country rows */
+  .crow { display:grid; grid-template-columns:110px 1fr 46px; gap:12px; align-items:center; margin:9px 0; }
+  .crow .cn { font-size:13px; color:var(--ink2); text-align:right; font-weight:600; }
+  .crow .cv { font-size:13px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .cbar { display:flex; height:20px; gap:2px; }
+  .cbar span { min-width:0; }
+  .legend { display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; font-size:11px; color:var(--ink2); }
+  .legend i { width:9px; height:9px; border-radius:50%; display:inline-block; margin-right:4px; }
+  /* velocity road */
+  .road { position:relative; margin:34px 8px 0; }
+  .road .rail { position:absolute; top:8px; left:0; right:0; height:3px; border-radius:2px;
+    background:linear-gradient(90deg,var(--z1),var(--z2),var(--z3),var(--z4),var(--z5)); }
+  .road .cols { display:flex; position:relative; }
+  .road .cols > div { flex:1; text-align:center; }
+  .rnode { width:17px; height:17px; border-radius:50%; margin:0 auto; border:3px solid var(--page);
+    box-shadow:0 0 0 1px var(--border); position:relative; z-index:1; }
+  .road .t { font-size:10.5px; font-weight:700; margin-top:9px; line-height:1.2; }
+  .gaps { display:flex; margin:14px 0 4px; }
+  .gaps > div { flex:1; text-align:center; padding:0 6px; }
+  .gaps .gv { font-size:21px; font-weight:750; }
+  .gaps .gv small { font-size:11px; font-weight:500; color:var(--muted); }
+  .gaps .gl { font-size:10.5px; color:var(--muted); line-height:1.3; margin-top:2px; }
+  .mvgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; }
+  .mv { text-align:center; padding:12px 8px; border:1px solid var(--grid); border-radius:12px; background:var(--page); }
+  .mv .n { font-size:22px; font-weight:750; }
+  .mv .l { font-size:11px; color:var(--ink2); margin-top:1px; }
+  .method { font-size:12px; color:var(--muted); margin-top:26px; max-width:78ch; }
+  #tip { position:fixed; pointer-events:none; background:var(--ink); color:var(--page);
+    font-size:12px; padding:5px 9px; border-radius:6px; opacity:0; transition:opacity .1s; z-index:10; }
+</style>
+</head>
+<body>
+<div class="topbar"></div>
+<div class="wrap">
+  <div class="eyebrow">Josiah Venture · Ministry Map</div>
+  <h1>How young people are moving toward Christ — across the movement.</h1>
+  <p class="lede">Every youth group that uses Ministry Map contributes anonymous zone counts. Together they answer the questions no single group can: where does the journey slow down, and where is God moving?</p>
+  <div class="privacy">🔒 <b>This dashboard sees zones, never names.</b> No student identities, no individual tracking, no leader notes — heart-notes never leave the leader's own coach. Only counts and durations are aggregated here.</div>
+  <div class="demo-banner" id="demo-note">🧪 Showing demo data — connects to live aggregates automatically once groups are on the deployed app.</div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <h2>Groups on the map, by country</h2>
+  <p class="sub">Each bar is one country's youth groups; segments show where their young people stand today.</p>
+  <div class="card" id="countries"></div>
+
+  <h2>How long does each step of the journey take?</h2>
+  <p class="sub">Median months between milestone crossings, computed from position history — the movement's honest answer to “how long does discipleship take?”</p>
+  <div class="card">
+    <div class="road">
+      <div class="rail"></div>
+      <div class="cols" id="roadcols"></div>
+    </div>
+    <div class="gaps" id="gaps"></div>
+  </div>
+
+  <h2>Movement this semester</h2>
+  <div class="card"><div class="mvgrid" id="mvgrid"></div>
+    <div style="font-size:12.5px; color:var(--ink2); margin-top:12px;" id="mvsummary"></div>
+  </div>
+
+  <div class="method"><b>How this is computed without tracking anyone:</b> each group's app saves check-ins as anonymous position rows. The aggregation runs server-side: it measures, per student record, the time between first appearing in one zone and first appearing in the next — then throws the identities away and reports only counts and medians. A country appears once it has 3+ groups, so no group is identifiable.</div>
+</div>
+<div id="tip"></div>
+
+<script>
+const ZONES = [
+  { name:'COME & SEE', c:'var(--z1)' },
+  { name:'REPENT & BELIEVE', c:'var(--z2)' },
+  { name:'FOLLOW ME', c:'var(--z3)' },
+  { name:'FISH FOR PEOPLE', c:'var(--z4)' },
+  { name:'SENDING YOU', c:'var(--z5)' },
+];
+
+// ── demo aggregates (replaced by /api/aggregate when live) ──
+let AGG = {
+  demo: true,
+  groups: 23, countries: 6, students: 587, checkinsThisSemester: 19,
+  byCountry: [
+    { country:'Czech Republic', groups:8, zones:[92,11,74,31,9] },
+    { country:'Slovakia', groups:4, zones:[38,5,41,12,3] },
+    { country:'Poland', groups:5, zones:[57,7,49,18,4] },
+    { country:'Ukraine', groups:3, zones:[41,9,28,9,2] },
+    { country:'Hungary', groups:2, zones:[19,2,17,6,1] },
+    { country:'Romania', groups:1, zones:[8,1,7,2,1] },
+  ],
+  transitions: [
+    { from:'Come & See', to:'Repent & Believe', medianMonths:14, n:41 },
+    { from:'Repent & Believe', to:'Follow Me', medianMonths:8, n:36 },
+    { from:'Follow Me', to:'Fish for People', medianMonths:19, n:18 },
+    { from:'Fish for People', to:'Sending You', medianMonths:26, n:7 },
+  ],
+  movement: { forward:64, back:12, joined:71, left:38 },
+};
+
+function render() {
+  const totalZones = [0,0,0,0,0];
+  AGG.byCountry.forEach(c=>c.zones.forEach((v,i)=>totalZones[i]+=v));
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi"><div class="label">Youth groups mapping</div><div class="value">${AGG.groups}</div><div class="note">${AGG.countries} countries</div></div>
+    <div class="kpi"><div class="label">Young people on the journey</div><div class="value">${AGG.students}</div><div class="note">no names — zone counts only</div></div>
+    <div class="kpi"><div class="label">Following Jesus</div><div class="value">${Math.round((totalZones[2]+totalZones[3]+totalZones[4])/AGG.students*100)}%</div><div class="note">in Follow Me or beyond</div></div>
+    <div class="kpi"><div class="label">Being sent as leaders</div><div class="value">${totalZones[4]}</div><div class="note">in “Sending You” — the goal of it all</div></div>`;
+
+  const maxN = Math.max(...AGG.byCountry.map(c=>c.zones.reduce((a,b)=>a+b,0)));
+  document.getElementById('countries').innerHTML = AGG.byCountry.map(c=>{
+    const n = c.zones.reduce((a,b)=>a+b,0);
+    return `<div class="crow">
+      <div class="cn">${c.country}<div style="font-weight:400;font-size:10.5px;color:var(--muted)">${c.groups} group${c.groups===1?'':'s'}</div></div>
+      <div class="cbar" style="width:${n/maxN*100}%">
+        ${c.zones.map((v,i)=>v?`<span style="flex:${v};background:${ZONES[i].c}" data-tip="${c.country} — ${ZONES[i].name}: ${v}"></span>`:'').join('')}
+      </div>
+      <div class="cv">${n}</div>
+    </div>`;
+  }).join('') + `<div class="legend">${ZONES.map(z=>`<span><i style="background:${z.c}"></i>${z.name}</span>`).join('')}</div>`;
+
+  document.getElementById('roadcols').innerHTML = ZONES.map(z=>`
+    <div><div class="rnode" style="background:${z.c}"></div><div class="t">${z.name}</div></div>`).join('');
+  document.getElementById('gaps').innerHTML =
+    `<div style="flex:0.5"></div>` +
+    AGG.transitions.map(t=>`
+      <div><div class="gv">${t.medianMonths} <small>mo</small></div>
+      <div class="gl">median, ${t.n} crossings<br>${t.from} → ${t.to}</div></div>`).join('') +
+    `<div style="flex:0.5"></div>`;
+
+  const m = AGG.movement;
+  document.getElementById('mvgrid').innerHTML = `
+    <div class="mv"><div class="n" style="color:var(--good)">${m.forward} ↑</div><div class="l">stepped forward</div></div>
+    <div class="mv"><div class="n" style="color:var(--serious)">${m.back} ↓</div><div class="l">stepped back</div></div>
+    <div class="mv"><div class="n" style="color:var(--accent)">${m.joined} ✦</div><div class="l">new on the map</div></div>
+    <div class="mv"><div class="n" style="color:var(--muted)">${m.left}</div><div class="l">no longer coming</div></div>`;
+  document.getElementById('mvsummary').textContent =
+    `For every ${Math.round(m.forward/Math.max(1,m.back))} steps forward, 1 step back — and ${m.joined} new young people met a group that could walk them toward Jesus.`;
+
+  document.getElementById('demo-note').style.display = AGG.demo ? 'block' : 'none';
+}
+
+render();
+fetch('/api/aggregate').then(r=>r.ok?r.json():null).then(d=>{
+  if (d && d.groups) { AGG = d; AGG.demo = false; render(); }
+}).catch(()=>{});
+
+const tip = document.getElementById('tip');
+document.addEventListener('mousemove', e=>{
+  const t = e.target.closest('[data-tip]');
+  if (t) { tip.textContent=t.dataset.tip; tip.style.opacity=1;
+    tip.style.left=Math.min(e.clientX+12,innerWidth-220)+'px'; tip.style.top=(e.clientY+14)+'px';
+  } else tip.style.opacity=0;
+});
+</script>
+</body>
+</html>

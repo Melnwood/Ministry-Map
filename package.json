@@ -1,0 +1,9 @@
+{
+  "name": "ministry-map",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Ministry Map — youth leader self-assessment on the five challenges of Jesus",
+  "devDependencies": {
+    "@netlify/functions": "^2.8.0"
+  }
+}
