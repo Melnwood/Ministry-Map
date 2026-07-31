@@ -4,6 +4,17 @@ A self-assessment tool for youth leaders: map every student along the five chall
 (Come & See → Repent & Believe → Follow Me → Fish for People → I Am Sending You), check in each
 season, watch movement over time, and get coaching questions drawn from the group's own data.
 
+## Languages
+
+The app ships in the language of every Josiah Venture country, plus English — 16 in all:
+Albanian, Bulgarian, Croatian, Czech, English, Estonian, German, Hungarian, Latvian,
+Montenegrin, Polish, Romanian (also serving Moldova), Serbian, Slovak, Slovenian, and
+Ukrainian. The language is auto-detected from the browser on first visit, can be switched
+from the selector on the welcome screen, and is remembered per device. Zone names, milestone
+prompts, the five challenge quotes, tabs, and the whole onboarding flow are translated;
+dates format per locale. (Dynamic coach/insight text stays English in this prototype — in
+the full version the AI coach responds natively in the leader's language.)
+
 ## Stack
 
 - **Frontend**: single-file `index.html` (no build step)

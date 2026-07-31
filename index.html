@@ -200,11 +200,7 @@
     <div style="display:flex; align-items:center;">
       <div class="eyebrow">Ministry Map</div>
       <select id="langsel" onchange="setLang(this.value)" style="margin-left:auto; font-size:12px; font-family:inherit; padding:5px 8px; border-radius:8px; border:1.5px solid var(--grid); background:var(--surface); color:var(--ink2);">
-        <option value="en">🌐 English</option>
-        <option value="cs">🌐 Čeština</option>
-        <option disabled>Polski — brzy</option>
-        <option disabled>Українська — незабаром</option>
-        <option disabled>Slovenčina · Magyar · Română…</option>
+        <option value="en">🌐 English</option><!-- full list is rendered from LANGS at load -->
       </select>
     </div>
     <h1 id="t-title">See your group the way the Shepherd does.</h1>
@@ -391,11 +387,200 @@ const MSTONES = [
 ];
 
 // ═══════════ languages ═══════════
-// Zone/milestone names live on the data objects; setLang() swaps them and re-renders.
-// The AI coach responds in the leader's language natively in the full version, so coach
-// text is not dictionary-translated here.
+// One pack per language of the 16 Josiah Venture countries (Moldova shares Romanian
+// with Romania; Montenegro gets its own ijekavian pack). Zone/milestone names live on
+// the data objects; setLang() swaps them and re-renders. The AI coach responds in the
+// leader's language natively in the full version, so coach text is not
+// dictionary-translated here.
 let LANG = 'en';
+const LANGS = {
+  en:  { native:'English',      flag:'🌐',  locale:'en-GB' },
+  sq:  { native:'Shqip',        flag:'🇦🇱', locale:'sq',         country:'Albania' },
+  bg:  { native:'Български',    flag:'🇧🇬', locale:'bg',         country:'Bulgaria' },
+  hr:  { native:'Hrvatski',     flag:'🇭🇷', locale:'hr',         country:'Croatia' },
+  cs:  { native:'Čeština',      flag:'🇨🇿', locale:'cs',         country:'Czech Republic' },
+  et:  { native:'Eesti',        flag:'🇪🇪', locale:'et',         country:'Estonia' },
+  de:  { native:'Deutsch',      flag:'🇩🇪', locale:'de',         country:'Germany' },
+  hu:  { native:'Magyar',       flag:'🇭🇺', locale:'hu',         country:'Hungary' },
+  lv:  { native:'Latviešu',     flag:'🇱🇻', locale:'lv',         country:'Latvia' },
+  cnr: { native:'Crnogorski',   flag:'🇲🇪', locale:'sr-Latn-ME', country:'Montenegro' },
+  pl:  { native:'Polski',       flag:'🇵🇱', locale:'pl',         country:'Poland' },
+  ro:  { native:'Română',       flag:'🇷🇴', locale:'ro',         country:'Romania & Moldova' },
+  sr:  { native:'Srpski',       flag:'🇷🇸', locale:'sr-Latn',    country:'Serbia' },
+  sk:  { native:'Slovenčina',   flag:'🇸🇰', locale:'sk',         country:'Slovakia' },
+  sl:  { native:'Slovenščina',  flag:'🇸🇮', locale:'sl',         country:'Slovenia' },
+  uk:  { native:'Українська',   flag:'🇺🇦', locale:'uk',         country:'Ukraine' },
+};
+const EM = t => '<em style="font-style:normal; text-decoration:underline; text-decoration-color:var(--serious); text-decoration-thickness:3px; text-underline-offset:3px;">'+t+'</em>';
 const L10N = {
+  en: {
+    zones: [
+      { name:'COME & SEE', sub:'curious' },
+      { name:'REPENT & BELIEVE', sub:'crossing into faith' },
+      { name:'FOLLOW ME', sub:'growing' },
+      { name:'FISH FOR PEOPLE', sub:'ministering' },
+      { name:'SENDING YOU', sub:'leading' },
+    ],
+    mstones: [
+      { name:'Repent & believe', ask:'talk & pray with them about believing' },
+      { name:'Follow me', ask:'invite them into the habits of a disciple' },
+      { name:'Fish for people', ask:'give them someone to serve' },
+      { name:'Sending you', ask:'prepare to send them out' },
+    ],
+    quotes: ['“Come and you will see.”','“Repent and believe the good news.”','“Come, follow me.”','“I will send you out to fish for people.”','“As the Father has sent me, I am sending you.”'],
+    tabs: { today:'Today', checkin:'✏️ Check-in', movement:'Movement', coach:'Coach' },
+    strings: {
+      't-title':'See your group the way the Shepherd does.',
+      't-lede':'Jesus called people step by step. A ministry map is simply your group, laid out along that journey — so you can see where each young person really is, and what they need next.',
+      't-p1':'<b>See everyone at once.</b> Every student, placed on the journey — the whole group in one picture.',
+      't-p2':'<b>Watch them move.</b> Check in anytime; the map remembers, and shows who stepped forward since last time.',
+      't-p3':'<b>Get questions worth praying over.</b> Not generic advice — questions built from your group and your own words.',
+      't-reassure':'🔒 This is not a report card, and nobody grades you. Your map belongs to you. Only you decide what to share.',
+      't-start':'Map my group →', 't-time':'⏱ about 10 minutes', 'code-entry':'Returning? Enter your group code',
+      't-s1-eyebrow':'Step 1 of 3', 't-s1-title':'Your group',
+      't-s1-l1':'What’s your group called?', 't-s1-l2':'Who leads it with you?',
+      't-s1-hint':'The whole app and the coach questions come back in your chosen language.',
+      't-back':'← Back', 't-s1-next':'Next: your people →', 't-demo':'or try it with Frýdlant’s demo group',
+      't-s2-eyebrow':'Step 2 of 3', 't-s2-title':'Your people',
+      't-s2-lede':'Bring them in however is easiest — then slide each dot to where they really are on the road, even if that’s “almost.” Go with your gut; you can change anything later.',
+      't-addnames':'Add these names ↓', 't-import':'📄 Import CSV / Excel',
+      'import-msg':'Have a roster already? Import it — we’ll read the names from the first column (or any column titled “name”).',
+      't-s2-next':'Next: how it’s really going →',
+      't-s3-eyebrow':'Step 3 of 3',
+      't-s3-title':'Before the numbers — how is it '+EM('really')+' going?',
+      't-s3-lede':'Ministry is not a spreadsheet. In your own words — a sentence or a page:',
+      't-heart-ph':'Honestly, this semester has been…',
+      't-s3-hint':'🔒 Stays private to you. The coach reads it to ask you better questions — that’s all it’s for.',
+      't-reveal':'Show me my map ✨',
+      't-p-q1':'Where are you struggling?', 't-p-q2':'What are you working on?', 't-p-q3':'What’s been hard?', 't-p-q4':'Who’s been hard?', 't-p-q5':'What are you hoping for?',
+    },
+  },
+  sq: {
+    zones: [
+      { name:'EJA DHE SHIKO', sub:'kureshtarë' },
+      { name:'PENDOHU DHE BESO', sub:'hyjnë në besim' },
+      { name:'MË NDIQ', sub:'rriten' },
+      { name:'PESHKATARË NJERËZISH', sub:'shërbejnë' },
+      { name:'PO JU DËRGOJ', sub:'udhëheqin' },
+    ],
+    mstones: [
+      { name:'Pendohu dhe beso', ask:'fol dhe lutu me ta për besimin' },
+      { name:'Më ndiq', ask:'ftoji në zakonet e një dishepulli' },
+      { name:'Peshkatarë njerëzish', ask:'jepu dikë të cilit t’i shërbejnë' },
+      { name:'Po ju dërgoj', ask:'përgatiti që të dërgohen' },
+    ],
+    quotes: ['„Ejani dhe do të shihni.“','„Pendohuni dhe besoni ungjillin.“','„Eja, ndiqmë!“','„Do t’ju bëj peshkatarë njerëzish.“','„Sikurse më dërgoi mua Ati, edhe unë po ju dërgoj ju.“'],
+    tabs: { today:'Sot', checkin:'✏️ Check-in', movement:'Lëvizja', coach:'Mentori' },
+    strings: {
+      't-title':'Shikoje grupin tënd ashtu siç e sheh Bariu.',
+      't-lede':'Jezusi i thirri njerëzit hap pas hapi. Harta e shërbesës është thjesht grupi yt, i vendosur përgjatë këtij udhëtimi — që të shohësh ku është me të vërtetë çdo i ri dhe çfarë i duhet më pas.',
+      't-p1':'<b>Shihi të gjithë njëherësh.</b> Çdo nxënës, i vendosur në udhëtim — i gjithë grupi në një pamje të vetme.',
+      't-p2':'<b>Shiko si lëvizin.</b> Kthehu kurdo; harta mban mend dhe tregon kush ka bërë një hap përpara që herën e fundit.',
+      't-p3':'<b>Merr pyetje që ia vlen t’i çosh në lutje.</b> Jo këshilla të përgjithshme — pyetje të ndërtuara nga grupi yt dhe fjalët e tua.',
+      't-reassure':'🔒 Kjo nuk është dëftesë dhe askush nuk të vlerëson. Harta jote të përket ty. Vetëm ti vendos çfarë ndan.',
+      't-start':'Hartëzo grupin tim →', 't-time':'⏱ rreth 10 minuta', 'code-entry':'Po kthehesh? Fut kodin e grupit',
+      't-s1-eyebrow':'Hapi 1 nga 3', 't-s1-title':'Grupi yt',
+      't-s1-l1':'Si quhet grupi juaj?', 't-s1-l2':'Kush e udhëheq bashkë me ty?',
+      't-s1-hint':'I gjithë aplikacioni dhe pyetjet e mentorit do të të përgjigjen shqip.',
+      't-back':'← Pas', 't-s1-next':'Tjetra: njerëzit e tu →', 't-demo':'ose provoje me grupin demo të Frýdlantit',
+      't-s2-eyebrow':'Hapi 2 nga 3', 't-s2-title':'Njerëzit e tu',
+      't-s2-lede':'Shtoji si të të vijë më lehtë — pastaj rrëshqite çdo pikë atje ku janë me të vërtetë në rrugë, edhe nëse është „pothuajse“. Beso instinktit; gjithçka mund ta ndryshosh më vonë.',
+      't-addnames':'Shto këta emra ↓', 't-import':'📄 Importo CSV / Excel',
+      'import-msg':'Ke tashmë një listë? Importoje — emrat i lexojmë nga kolona e parë (ose nga kolona „Emri“).',
+      't-s2-next':'Tjetra: si po shkon me të vërtetë →',
+      't-s3-eyebrow':'Hapi 3 nga 3',
+      't-s3-title':'Para numrave — si po shkon '+EM('me të vërtetë')+'?',
+      't-s3-lede':'Shërbesa nuk është tabelë. Me fjalët e tua — një fjali ose një faqe e tërë:',
+      't-heart-ph':'Sinqerisht, ky semestër ka qenë…',
+      't-s3-hint':'🔒 Mbetet vetëm për ty. Mentori e lexon që të të bëjë pyetje më të mira — vetëm për këtë.',
+      't-reveal':'Më trego hartën time ✨',
+      't-p-q1':'Ku po mundohesh?', 't-p-q2':'Për çfarë po punon?', 't-p-q3':'Çfarë ka qenë e vështirë?', 't-p-q4':'Kush ka qenë i vështirë?', 't-p-q5':'Për çfarë shpreson?',
+    },
+  },
+  bg: {
+    zones: [
+      { name:'ЕЛА И ВИЖ', sub:'любопитни' },
+      { name:'ПОКАЙ СЕ И ПОВЯРВАЙ', sub:'влизат във вяра' },
+      { name:'СЛЕДВАЙ МЕ', sub:'растат' },
+      { name:'ЛОВЦИ НА ХОРА', sub:'служат' },
+      { name:'ИЗПРАЩАМ ВИ', sub:'водят' },
+    ],
+    mstones: [
+      { name:'Покай се и повярвай', ask:'говори и се моли с тях за вярата' },
+      { name:'Следвай Ме', ask:'покани ги в навиците на ученик' },
+      { name:'Ловци на хора', ask:'дай им някого, на когото да служат' },
+      { name:'Изпращам ви', ask:'подготви ги да бъдат изпратени' },
+    ],
+    quotes: ['„Елате и ще видите.“','„Покайте се и повярвайте в благовестието.“','„Ела и Ме следвай.“','„Ще ви направя ловци на хора.“','„Както Отец изпрати Мен, така и Аз изпращам вас.“'],
+    tabs: { today:'Днес', checkin:'✏️ Чекин', movement:'Движение', coach:'Коуч' },
+    strings: {
+      't-title':'Виж групата си през очите на Пастира.',
+      't-lede':'Исус призоваваше хората стъпка по стъпка. Картата на служението е просто твоята група, подредена по този път — за да виждаш къде наистина е всеки млад човек и какво му е нужно по-нататък.',
+      't-p1':'<b>Виж всички наведнъж.</b> Всеки ученик, поставен на пътя — цялата група в една картина.',
+      't-p2':'<b>Гледай как се движат.</b> Връщай се по всяко време; картата помни и показва кой е направил крачка напред от последния път.',
+      't-p3':'<b>Получавай въпроси, за които си струва да се молиш.</b> Не общи съвети — въпроси, изградени от твоята група и твоите собствени думи.',
+      't-reassure':'🔒 Това не е бележник и никой не ти пише оценки. Твоята карта принадлежи на теб. Само ти решаваш какво да споделиш.',
+      't-start':'Картографирай групата ми →', 't-time':'⏱ около 10 минути', 'code-entry':'Връщаш се? Въведи кода на групата',
+      't-s1-eyebrow':'Стъпка 1 от 3', 't-s1-title':'Твоята група',
+      't-s1-l1':'Как се казва групата ви?', 't-s1-l2':'Кой я води заедно с теб?',
+      't-s1-hint':'Цялото приложение и въпросите на коуча ще ти отговарят на български.',
+      't-back':'← Назад', 't-s1-next':'Напред: твоите хора →', 't-demo':'или пробвай демо групата от Фридлант',
+      't-s2-eyebrow':'Стъпка 2 от 3', 't-s2-title':'Твоите хора',
+      't-s2-lede':'Добави ги както ти е най-лесно — после плъзни всяка точка там, където наистина са по пътя, дори да е „почти“. Довери се на усета си; всичко може да се промени по-късно.',
+      't-addnames':'Добави тези имена ↓', 't-import':'📄 Импорт на CSV / Excel',
+      'import-msg':'Вече имаш списък? Импортирай го — ще прочетем имената от първата колона (или от колона „Име“).',
+      't-s2-next':'Напред: как върви наистина →',
+      't-s3-eyebrow':'Стъпка 3 от 3',
+      't-s3-title':'Преди числата — как върви '+EM('наистина')+'?',
+      't-s3-lede':'Служението не е таблица. Със свои думи — изречение или цяла страница:',
+      't-heart-ph':'Честно казано, този семестър беше…',
+      't-s3-hint':'🔒 Остава само за теб. Коучът го чете, за да ти задава по-добри въпроси — само за това.',
+      't-reveal':'Покажи ми картата ✨',
+      't-p-q1':'Къде ти е трудно?', 't-p-q2':'Върху какво работиш?', 't-p-q3':'Кое беше трудно?', 't-p-q4':'Кой беше труден?', 't-p-q5':'На какво се надяваш?',
+    },
+  },
+  hr: {
+    zones: [
+      { name:'DOĐI I VIDI', sub:'znatiželjni' },
+      { name:'OBRATI SE I VJERUJ', sub:'ulaze u vjeru' },
+      { name:'POĐI ZA MNOM', sub:'rastu' },
+      { name:'RIBARI LJUDI', sub:'služe' },
+      { name:'ŠALJEM VAS', sub:'vode' },
+    ],
+    mstones: [
+      { name:'Obrati se i vjeruj', ask:'razgovaraj i moli se s njima o vjeri' },
+      { name:'Pođi za mnom', ask:'pozovi ih u navike učenika' },
+      { name:'Ribari ljudi', ask:'daj im nekoga kome mogu služiti' },
+      { name:'Šaljem vas', ask:'pripremi ih za slanje' },
+    ],
+    quotes: ['„Dođite i vidjet ćete.“','„Obratite se i vjerujte evanđelju.“','„Pođi za mnom.“','„Učinit ću vas ribarima ljudi.“','„Kao što je Otac poslao mene, i ja šaljem vas.“'],
+    tabs: { today:'Danas', checkin:'✏️ Check-in', movement:'Kretanje', coach:'Coach' },
+    strings: {
+      't-title':'Gledaj svoju grupu očima Pastira.',
+      't-lede':'Isus je pozivao ljude korak po korak. Karta službe jednostavno je tvoja grupa, raspoređena duž tog puta — da vidiš gdje je svaka mlada osoba doista i što joj je sljedeće potrebno.',
+      't-p1':'<b>Vidi sve odjednom.</b> Svaki učenik na svom mjestu puta — cijela grupa u jednoj slici.',
+      't-p2':'<b>Gledaj kako se kreću.</b> Vrati se bilo kada; karta pamti i pokazuje tko je od prošlog puta zakoračio naprijed.',
+      't-p3':'<b>Dobivaj pitanja vrijedna molitve.</b> Bez općenitih savjeta — pitanja izgrađena iz tvoje grupe i tvojih vlastitih riječi.',
+      't-reassure':'🔒 Ovo nije svjedodžba i nitko te ne ocjenjuje. Tvoja karta pripada tebi. Samo ti odlučuješ što ćeš podijeliti.',
+      't-start':'Mapiraj moju grupu →', 't-time':'⏱ oko 10 minuta', 'code-entry':'Vraćaš se? Unesi kod grupe',
+      't-s1-eyebrow':'Korak 1 od 3', 't-s1-title':'Tvoja grupa',
+      't-s1-l1':'Kako se vaša grupa zove?', 't-s1-l2':'Tko je vodi s tobom?',
+      't-s1-hint':'Cijela aplikacija i pitanja coacha odgovarat će ti na hrvatskom.',
+      't-back':'← Natrag', 't-s1-next':'Dalje: tvoji ljudi →', 't-demo':'ili isprobaj demo grupu iz Frýdlanta',
+      't-s2-eyebrow':'Korak 2 od 3', 't-s2-title':'Tvoji ljudi',
+      't-s2-lede':'Dodaj ih kako ti je najlakše — zatim povuci svaku točku tamo gdje doista jesu na putu, makar i „skoro“. Vjeruj svom osjećaju; sve možeš kasnije promijeniti.',
+      't-addnames':'Dodaj ova imena ↓', 't-import':'📄 Uvoz CSV / Excel',
+      'import-msg':'Već imaš popis? Uvezi ga — imena čitamo iz prvog stupca (ili iz stupca „Ime“).',
+      't-s2-next':'Dalje: kako doista ide →',
+      't-s3-eyebrow':'Korak 3 od 3',
+      't-s3-title':'Prije brojeva — kako '+EM('doista')+' ide?',
+      't-s3-lede':'Služba nije tablica. Svojim riječima — rečenica ili cijela stranica:',
+      't-heart-ph':'Iskreno, ovaj semestar je bio…',
+      't-s3-hint':'🔒 Ostaje samo tebi. Coach to čita da bi te bolje pitao — ništa više.',
+      't-reveal':'Pokaži mi moju kartu ✨',
+      't-p-q1':'Gdje se mučiš?', 't-p-q2':'Na čemu radiš?', 't-p-q3':'Što je bilo teško?', 't-p-q4':'Tko je bio težak?', 't-p-q5':'Čemu se nadaš?',
+    },
+  },
   cs: {
     zones: [
       { name:'POJĎ A UVIDÍŠ', sub:'zvědaví' },
@@ -430,7 +615,7 @@ const L10N = {
       'import-msg':'Už máš seznam? Naimportuj ho — jména načteme z prvního sloupce (nebo ze sloupce „Jméno“).',
       't-s2-next':'Dál: jak to doopravdy jde →',
       't-s3-eyebrow':'Krok 3 ze 3',
-      't-s3-title':'Než přijdou čísla — jak to <em style="font-style:normal; text-decoration:underline; text-decoration-color:var(--serious); text-decoration-thickness:3px; text-underline-offset:3px;">doopravdy</em> jde?',
+      't-s3-title':'Než přijdou čísla — jak to '+EM('doopravdy')+' jde?',
       't-s3-lede':'Služba není tabulka. Vlastními slovy — věta nebo celá stránka:',
       't-heart-ph':'Upřímně, tenhle semestr byl…',
       't-s3-hint':'🔒 Zůstává jen tobě. Kouč to čte, aby se tě ptal lépe — nic víc.',
@@ -438,34 +623,496 @@ const L10N = {
       't-p-q1':'Kde se trápíš?', 't-p-q2':'Na čem pracuješ?', 't-p-q3':'Co bylo těžké?', 't-p-q4':'Kdo byl těžký?', 't-p-q5':'V co doufáš?',
     },
   },
+  et: {
+    zones: [
+      { name:'TULE JA VAATA', sub:'uudishimulikud' },
+      { name:'PARANDA MEELT JA USU', sub:'jõuavad usuni' },
+      { name:'JÄRGNE MULLE', sub:'kasvavad' },
+      { name:'INIMESEPÜÜDJAD', sub:'teenivad' },
+      { name:'MA LÄKITAN TEID', sub:'juhivad' },
+    ],
+    mstones: [
+      { name:'Paranda meelt ja usu', ask:'räägi ja palveta nendega usust' },
+      { name:'Järgne mulle', ask:'kutsu nad jüngri harjumustesse' },
+      { name:'Inimesepüüdjad', ask:'anna neile keegi, keda teenida' },
+      { name:'Ma läkitan teid', ask:'valmista nad läkitamiseks ette' },
+    ],
+    quotes: ['„Tulge ja vaadake!“','„Parandage meelt ja uskuge evangeeliumisse!“','„Järgne mulle!“','„Ma teen teist inimesepüüdjad.“','„Nõnda nagu Isa on läkitanud minu, nõnda saadan ka mina teid.“'],
+    tabs: { today:'Täna', checkin:'✏️ Check-in', movement:'Liikumine', coach:'Coach' },
+    strings: {
+      't-title':'Vaata oma gruppi nii, nagu Karjane seda näeb.',
+      't-lede':'Jeesus kutsus inimesi samm-sammult. Teenistuse kaart on lihtsalt sinu grupp, paigutatud sellele teekonnale — et näeksid, kus iga noor tegelikult on ja mida ta järgmiseks vajab.',
+      't-p1':'<b>Näe kõiki korraga.</b> Iga õpilane teekonnal omal kohal — kogu grupp ühes pildis.',
+      't-p2':'<b>Jälgi nende liikumist.</b> Tule tagasi millal tahes; kaart mäletab ja näitab, kes on eelmisest korrast sammu edasi astunud.',
+      't-p3':'<b>Saa küsimusi, mille üle palvetada.</b> Mitte üldiseid nõuandeid — küsimused, mis on ehitatud sinu grupist ja sinu enda sõnadest.',
+      't-reassure':'🔒 See ei ole tunnistus ja keegi ei pane sulle hindeid. Sinu kaart kuulub sulle. Ainult sina otsustad, mida jagad.',
+      't-start':'Kaardista mu grupp →', 't-time':'⏱ umbes 10 minutit', 'code-entry':'Tuled tagasi? Sisesta grupi kood',
+      't-s1-eyebrow':'Samm 1/3', 't-s1-title':'Sinu grupp',
+      't-s1-l1':'Mis on teie grupi nimi?', 't-s1-l2':'Kes seda koos sinuga juhib?',
+      't-s1-hint':'Kogu rakendus ja coachi küsimused vastavad sulle eesti keeles.',
+      't-back':'← Tagasi', 't-s1-next':'Edasi: sinu inimesed →', 't-demo':'või proovi Frýdlanti demogrupiga',
+      't-s2-eyebrow':'Samm 2/3', 't-s2-title':'Sinu inimesed',
+      't-s2-lede':'Lisa nad nii, nagu on kõige lihtsam — siis lohista iga punkt sinna, kus nad teekonnal tegelikult on, kas või „peaaegu“. Usalda oma sisetunnet; kõike saab hiljem muuta.',
+      't-addnames':'Lisa need nimed ↓', 't-import':'📄 Impordi CSV / Excel',
+      'import-msg':'Nimekiri on juba olemas? Impordi see — loeme nimed esimesest veerust (või veerust pealkirjaga „Nimi“).',
+      't-s2-next':'Edasi: kuidas päriselt läheb →',
+      't-s3-eyebrow':'Samm 3/3',
+      't-s3-title':'Enne numbreid — kuidas '+EM('päriselt')+' läheb?',
+      't-s3-lede':'Teenistus ei ole tabel. Oma sõnadega — lause või terve lehekülg:',
+      't-heart-ph':'Ausalt öeldes on see semester olnud…',
+      't-s3-hint':'🔒 Jääb ainult sulle. Coach loeb seda, et küsida sinult paremaid küsimusi — ainult selleks.',
+      't-reveal':'Näita mu kaarti ✨',
+      't-p-q1':'Millega sa maadled?', 't-p-q2':'Mille kallal töötad?', 't-p-q3':'Mis on olnud raske?', 't-p-q4':'Kes on olnud raske?', 't-p-q5':'Mida sa loodad?',
+    },
+  },
+  de: {
+    zones: [
+      { name:'KOMM UND SIEH', sub:'neugierig' },
+      { name:'KEHR UM UND GLAUBE', sub:'kommen zum Glauben' },
+      { name:'FOLGE MIR', sub:'wachsen' },
+      { name:'MENSCHENFISCHER', sub:'dienen' },
+      { name:'ICH SENDE EUCH', sub:'leiten' },
+    ],
+    mstones: [
+      { name:'Kehr um und glaube', ask:'sprich und bete mit ihnen über den Glauben' },
+      { name:'Folge mir', ask:'lade sie in die Gewohnheiten eines Jüngers ein' },
+      { name:'Menschenfischer', ask:'gib ihnen jemanden, dem sie dienen können' },
+      { name:'Ich sende euch', ask:'bereite sie aufs Aussenden vor' },
+    ],
+    quotes: ['„Kommt und seht!“','„Tut Buße und glaubt an das Evangelium!“','„Folge mir nach!“','„Ich will euch zu Menschenfischern machen.“','„Wie mich der Vater gesandt hat, so sende ich euch.“'],
+    tabs: { today:'Heute', checkin:'✏️ Check-in', movement:'Bewegung', coach:'Coach' },
+    strings: {
+      't-title':'Sieh deine Gruppe so, wie der Hirte sie sieht.',
+      't-lede':'Jesus hat Menschen Schritt für Schritt berufen. Eine Ministry Map ist einfach deine Gruppe, entlang dieses Weges ausgelegt — damit du siehst, wo jeder junge Mensch wirklich steht und was er als Nächstes braucht.',
+      't-p1':'<b>Sieh alle auf einen Blick.</b> Jeder Teilnehmer auf dem Weg platziert — die ganze Gruppe in einem Bild.',
+      't-p2':'<b>Sieh, wie sie sich bewegen.</b> Komm jederzeit zurück; die Karte merkt es sich und zeigt, wer seit dem letzten Mal einen Schritt gemacht hat.',
+      't-p3':'<b>Bekomm Fragen, über die es sich zu beten lohnt.</b> Keine allgemeinen Ratschläge — Fragen aus deiner Gruppe und deinen eigenen Worten.',
+      't-reassure':'🔒 Das ist kein Zeugnis, und niemand benotet dich. Deine Karte gehört dir. Nur du entscheidest, was du teilst.',
+      't-start':'Meine Gruppe kartieren →', 't-time':'⏱ etwa 10 Minuten', 'code-entry':'Schon dabei? Gib deinen Gruppencode ein',
+      't-s1-eyebrow':'Schritt 1 von 3', 't-s1-title':'Deine Gruppe',
+      't-s1-l1':'Wie heißt eure Gruppe?', 't-s1-l2':'Wer leitet sie mit dir?',
+      't-s1-hint':'Die ganze App und die Coach-Fragen antworten dir auf Deutsch.',
+      't-back':'← Zurück', 't-s1-next':'Weiter: deine Leute →', 't-demo':'oder probiere die Demo-Gruppe aus Frýdlant',
+      't-s2-eyebrow':'Schritt 2 von 3', 't-s2-title':'Deine Leute',
+      't-s2-lede':'Füge sie hinzu, wie es am einfachsten ist — dann schiebe jeden Punkt dorthin, wo sie auf dem Weg wirklich stehen, auch wenn es „fast“ ist. Vertrau deinem Gefühl; alles lässt sich später ändern.',
+      't-addnames':'Diese Namen hinzufügen ↓', 't-import':'📄 CSV / Excel importieren',
+      'import-msg':'Du hast schon eine Liste? Importiere sie — wir lesen die Namen aus der ersten Spalte (oder aus einer Spalte „Name“).',
+      't-s2-next':'Weiter: wie es wirklich läuft →',
+      't-s3-eyebrow':'Schritt 3 von 3',
+      't-s3-title':'Bevor die Zahlen kommen — wie läuft es '+EM('wirklich')+'?',
+      't-s3-lede':'Dienst ist keine Tabelle. In deinen eigenen Worten — ein Satz oder eine ganze Seite:',
+      't-heart-ph':'Ehrlich gesagt war dieses Semester…',
+      't-s3-hint':'🔒 Bleibt bei dir. Der Coach liest es, um dir bessere Fragen zu stellen — nur dafür.',
+      't-reveal':'Zeig mir meine Karte ✨',
+      't-p-q1':'Wo kämpfst du?', 't-p-q2':'Woran arbeitest du?', 't-p-q3':'Was war schwer?', 't-p-q4':'Wer war schwer?', 't-p-q5':'Worauf hoffst du?',
+    },
+  },
+  hu: {
+    zones: [
+      { name:'JÖJJ ÉS LÁSD', sub:'érdeklődők' },
+      { name:'TÉRJ MEG ÉS HIGGY', sub:'hitre jutnak' },
+      { name:'KÖVESS ENGEM', sub:'növekednek' },
+      { name:'EMBERHALÁSZOK', sub:'szolgálnak' },
+      { name:'KÜLDELEK TITEKET', sub:'vezetnek' },
+    ],
+    mstones: [
+      { name:'Térj meg és higgy', ask:'beszélgess és imádkozz velük a hitről' },
+      { name:'Kövess engem', ask:'hívd meg őket a tanítvány szokásaiba' },
+      { name:'Emberhalászok', ask:'adj nekik valakit, akit szolgálhatnak' },
+      { name:'Küldelek titeket', ask:'készítsd fel őket a kiküldésre' },
+    ],
+    quotes: ['„Jöjjetek, és meglátjátok.“','„Térjetek meg, és higgyetek az evangéliumban!“','„Kövess engem!“','„Emberhalászokká teszlek titeket.“','„Ahogyan engem elküldött az Atya, én is elküldelek titeket.“'],
+    tabs: { today:'Ma', checkin:'✏️ Check-in', movement:'Mozgás', coach:'Coach' },
+    strings: {
+      't-title':'Lásd a csoportodat úgy, ahogy a Pásztor látja.',
+      't-lede':'Jézus lépésről lépésre hívta el az embereket. A szolgálati térkép egyszerűen a csoportod, ezen az úton elhelyezve — hogy lásd, hol tart valójában minden fiatal, és mire van szüksége ezután.',
+      't-p1':'<b>Láss mindenkit egyszerre.</b> Minden diák az úton elhelyezve — az egész csoport egyetlen képben.',
+      't-p2':'<b>Nézd, ahogy mozognak.</b> Térj vissza bármikor; a térkép emlékszik, és megmutatja, ki lépett előre legutóbb óta.',
+      't-p3':'<b>Kapj kérdéseket, amikért érdemes imádkozni.</b> Nem általános tanácsok — a csoportodból és a saját szavaidból épült kérdések.',
+      't-reassure':'🔒 Ez nem bizonyítvány, és senki sem osztályoz. A térképed a tiéd. Csak te döntöd el, mit osztasz meg.',
+      't-start':'Térképezzük fel a csoportomat →', 't-time':'⏱ kb. 10 perc', 'code-entry':'Visszatérsz? Add meg a csoportkódot',
+      't-s1-eyebrow':'1. lépés a 3-ból', 't-s1-title':'A csoportod',
+      't-s1-l1':'Hogy hívják a csoportotokat?', 't-s1-l2':'Ki vezeti veled együtt?',
+      't-s1-hint':'Az egész alkalmazás és a coach kérdései magyarul válaszolnak.',
+      't-back':'← Vissza', 't-s1-next':'Tovább: az embereid →', 't-demo':'vagy próbáld ki a frýdlanti demócsoporttal',
+      't-s2-eyebrow':'2. lépés a 3-ból', 't-s2-title':'Az embereid',
+      't-s2-lede':'Add hozzá őket, ahogy a legkönnyebb — majd húzd a pontokat oda, ahol tényleg tartanak az úton, akár „majdnem“-re is. Bízz a megérzésedben; később bármit módosíthatsz.',
+      't-addnames':'Nevek hozzáadása ↓', 't-import':'📄 CSV / Excel importálása',
+      'import-msg':'Van már névsorod? Importáld — a neveket az első oszlopból olvassuk (vagy a „Név“ feliratú oszlopból).',
+      't-s2-next':'Tovább: hogy megy valójában →',
+      't-s3-eyebrow':'3. lépés a 3-ból',
+      't-s3-title':'Mielőtt jönnek a számok — hogy megy '+EM('valójában')+'?',
+      't-s3-lede':'A szolgálat nem táblázat. Saját szavaiddal — egy mondat vagy egy egész oldal:',
+      't-heart-ph':'Őszintén, ez a félév…',
+      't-s3-hint':'🔒 Csak a tiéd marad. A coach azért olvassa, hogy jobb kérdéseket tegyen fel — semmi másért.',
+      't-reveal':'Mutasd a térképemet ✨',
+      't-p-q1':'Miben küzdesz?', 't-p-q2':'Min dolgozol?', 't-p-q3':'Mi volt nehéz?', 't-p-q4':'Ki volt nehéz?', 't-p-q5':'Miben reménykedsz?',
+    },
+  },
+  lv: {
+    zones: [
+      { name:'NĀC UN REDZI', sub:'ziņkārīgie' },
+      { name:'ATGRIEZIES UN TICI', sub:'ienāk ticībā' },
+      { name:'SEKO MAN', sub:'aug' },
+      { name:'CILVĒKU ZVEJNIEKI', sub:'kalpo' },
+      { name:'ES JŪS SŪTU', sub:'vada' },
+    ],
+    mstones: [
+      { name:'Atgriezies un tici', ask:'runā un lūdz kopā ar viņiem par ticību' },
+      { name:'Seko Man', ask:'aicini viņus mācekļa paradumos' },
+      { name:'Cilvēku zvejnieki', ask:'dod viņiem kādu, kam kalpot' },
+      { name:'Es jūs sūtu', ask:'sagatavo viņus sūtīšanai' },
+    ],
+    quotes: ['„Nāciet un redzēsiet!“','„Atgriezieties no grēkiem un ticiet evaņģēlijam!“','„Seko Man!“','„Es jūs darīšu par cilvēku zvejniekiem.“','„Kā Tēvs Mani ir sūtījis, tā Es jūs sūtu.“'],
+    tabs: { today:'Šodien', checkin:'✏️ Check-in', movement:'Kustība', coach:'Koučs' },
+    strings: {
+      't-title':'Skaties uz savu grupu ar Gana acīm.',
+      't-lede':'Jēzus aicināja cilvēkus soli pa solim. Kalpošanas karte ir vienkārši tava grupa, izkārtota gar šo ceļu — lai tu redzētu, kur katrs jaunietis patiesībā ir un kas viņam vajadzīgs tālāk.',
+      't-p1':'<b>Redzi visus uzreiz.</b> Katrs skolēns savā vietā ceļā — visa grupa vienā attēlā.',
+      't-p2':'<b>Vēro, kā viņi kustas.</b> Atgriezies jebkurā laikā; karte atceras un parāda, kurš kopš pēdējās reizes ir spēris soli uz priekšu.',
+      't-p3':'<b>Saņem jautājumus, par kuriem ir vērts lūgt.</b> Ne vispārīgus padomus — jautājumus, kas veidoti no tavas grupas un taviem vārdiem.',
+      't-reassure':'🔒 Šī nav liecība, un neviens tevi nevērtē. Tava karte pieder tev. Tikai tu izlem, ar ko dalīties.',
+      't-start':'Kartēt manu grupu →', 't-time':'⏱ apmēram 10 minūtes', 'code-entry':'Atgriezies? Ievadi grupas kodu',
+      't-s1-eyebrow':'1. solis no 3', 't-s1-title':'Tava grupa',
+      't-s1-l1':'Kā sauc jūsu grupu?', 't-s1-l2':'Kas to vada kopā ar tevi?',
+      't-s1-hint':'Visa lietotne un kouča jautājumi tev atbildēs latviski.',
+      't-back':'← Atpakaļ', 't-s1-next':'Tālāk: tavi cilvēki →', 't-demo':'vai izmēģini Frīdlantes demo grupu',
+      't-s2-eyebrow':'2. solis no 3', 't-s2-title':'Tavi cilvēki',
+      't-s2-lede':'Pievieno viņus, kā tev ērtāk — tad pavelc katru punktu tur, kur viņi ceļā patiešām ir, kaut vai „gandrīz“. Uzticies savai nojautai; visu vēlāk var mainīt.',
+      't-addnames':'Pievienot šos vārdus ↓', 't-import':'📄 Importēt CSV / Excel',
+      'import-msg':'Jau ir saraksts? Importē to — vārdus nolasīsim no pirmās kolonnas (vai kolonnas „Vārds“).',
+      't-s2-next':'Tālāk: kā patiesībā iet →',
+      't-s3-eyebrow':'3. solis no 3',
+      't-s3-title':'Pirms skaitļiem — kā iet '+EM('patiesībā')+'?',
+      't-s3-lede':'Kalpošana nav tabula. Saviem vārdiem — teikums vai vesela lappuse:',
+      't-heart-ph':'Godīgi sakot, šis semestris ir bijis…',
+      't-s3-hint':'🔒 Paliek tikai tev. Koučs to lasa, lai uzdotu tev labākus jautājumus — tikai tāpēc.',
+      't-reveal':'Parādi manu karti ✨',
+      't-p-q1':'Kur tev ir grūti?', 't-p-q2':'Pie kā tu strādā?', 't-p-q3':'Kas ir bijis grūts?', 't-p-q4':'Kurš ir bijis grūts?', 't-p-q5':'Uz ko tu ceri?',
+    },
+  },
+  cnr: {
+    zones: [
+      { name:'DOĐI I VIDI', sub:'radoznali' },
+      { name:'POKAJ SE I VJERUJ', sub:'ulaze u vjeru' },
+      { name:'POĐI ZA MNOM', sub:'rastu' },
+      { name:'RIBARI LJUDI', sub:'služe' },
+      { name:'ŠALJEM VAS', sub:'vode' },
+    ],
+    mstones: [
+      { name:'Pokaj se i vjeruj', ask:'razgovaraj i moli se s njima o vjeri' },
+      { name:'Pođi za mnom', ask:'pozovi ih u navike učenika' },
+      { name:'Ribari ljudi', ask:'daj im nekoga kome mogu služiti' },
+      { name:'Šaljem vas', ask:'pripremi ih za slanje' },
+    ],
+    quotes: ['„Dođite i vidjećete.“','„Pokajte se i vjerujte u jevanđelje.“','„Pođi za mnom.“','„Učiniću vas ribarima ljudi.“','„Kao što je Otac poslao mene, i ja šaljem vas.“'],
+    tabs: { today:'Danas', checkin:'✏️ Check-in', movement:'Kretanje', coach:'Coach' },
+    strings: {
+      't-title':'Gledaj svoju grupu očima Pastira.',
+      't-lede':'Isus je pozivao ljude korak po korak. Mapa službe je jednostavno tvoja grupa, raspoređena duž tog puta — da vidiš gdje je svaka mlada osoba zaista i šta joj je sljedeće potrebno.',
+      't-p1':'<b>Vidi sve odjednom.</b> Svaki učenik na svom mjestu puta — cijela grupa u jednoj slici.',
+      't-p2':'<b>Gledaj kako se kreću.</b> Vrati se bilo kada; mapa pamti i pokazuje ko je od prošlog puta zakoračio naprijed.',
+      't-p3':'<b>Dobijaj pitanja vrijedna molitve.</b> Bez opštih savjeta — pitanja izgrađena iz tvoje grupe i tvojih sopstvenih riječi.',
+      't-reassure':'🔒 Ovo nije đačka knjižica i niko te ne ocjenjuje. Tvoja mapa pripada tebi. Samo ti odlučuješ šta dijeliš.',
+      't-start':'Mapiraj moju grupu →', 't-time':'⏱ oko 10 minuta', 'code-entry':'Vraćaš se? Unesi kod grupe',
+      't-s1-eyebrow':'Korak 1 od 3', 't-s1-title':'Tvoja grupa',
+      't-s1-l1':'Kako se vaša grupa zove?', 't-s1-l2':'Ko je vodi sa tobom?',
+      't-s1-hint':'Cijela aplikacija i pitanja coacha odgovaraće ti na crnogorskom.',
+      't-back':'← Nazad', 't-s1-next':'Dalje: tvoji ljudi →', 't-demo':'ili isprobaj demo grupu iz Frýdlanta',
+      't-s2-eyebrow':'Korak 2 od 3', 't-s2-title':'Tvoji ljudi',
+      't-s2-lede':'Dodaj ih kako ti je najlakše — zatim prevuci svaku tačku tamo gdje zaista jesu na putu, makar i „skoro“. Vjeruj svom osjećaju; sve možeš kasnije promijeniti.',
+      't-addnames':'Dodaj ova imena ↓', 't-import':'📄 Uvoz CSV / Excel',
+      'import-msg':'Već imaš spisak? Uvezi ga — imena čitamo iz prve kolone (ili iz kolone „Ime“).',
+      't-s2-next':'Dalje: kako zaista ide →',
+      't-s3-eyebrow':'Korak 3 od 3',
+      't-s3-title':'Prije brojeva — kako '+EM('zaista')+' ide?',
+      't-s3-lede':'Služba nije tabela. Svojim riječima — rečenica ili cijela strana:',
+      't-heart-ph':'Iskreno, ovaj semestar je bio…',
+      't-s3-hint':'🔒 Ostaje samo tebi. Coach to čita da bi te bolje pitao — ništa više.',
+      't-reveal':'Pokaži mi moju mapu ✨',
+      't-p-q1':'Gdje se mučiš?', 't-p-q2':'Na čemu radiš?', 't-p-q3':'Šta je bilo teško?', 't-p-q4':'Ko je bio težak?', 't-p-q5':'Čemu se nadaš?',
+    },
+  },
+  pl: {
+    zones: [
+      { name:'PRZYJDŹ I ZOBACZ', sub:'ciekawi' },
+      { name:'NAWRÓĆ SIĘ I UWIERZ', sub:'wchodzą w wiarę' },
+      { name:'PÓJDŹ ZA MNĄ', sub:'wzrastają' },
+      { name:'RYBACY LUDZI', sub:'służą' },
+      { name:'POSYŁAM WAS', sub:'prowadzą' },
+    ],
+    mstones: [
+      { name:'Nawróć się i uwierz', ask:'rozmawiaj z nimi i módl się o ich wiarę' },
+      { name:'Pójdź za Mną', ask:'zaproś ich do nawyków ucznia' },
+      { name:'Rybacy ludzi', ask:'daj im kogoś, komu mogą służyć' },
+      { name:'Posyłam was', ask:'przygotuj ich do posłania' },
+    ],
+    quotes: ['„Chodźcie, a zobaczycie.“','„Nawracajcie się i wierzcie w Ewangelię.“','„Pójdź za Mną.“','„Sprawię, że staniecie się rybakami ludzi.“','„Jak Ojciec Mnie posłał, tak i Ja was posyłam.“'],
+    tabs: { today:'Dziś', checkin:'✏️ Check-in', movement:'Ruch', coach:'Coach' },
+    strings: {
+      't-title':'Zobacz swoją grupę oczami Pasterza.',
+      't-lede':'Jezus powoływał ludzi krok po kroku. Mapa służby to po prostu twoja grupa rozłożona wzdłuż tej drogi — żebyś widział, gdzie każdy młody człowiek naprawdę jest i czego potrzebuje dalej.',
+      't-p1':'<b>Zobacz wszystkich naraz.</b> Każdy uczeń umieszczony na drodze — cała grupa w jednym obrazie.',
+      't-p2':'<b>Patrz, jak się poruszają.</b> Wracaj, kiedy chcesz; mapa pamięta i pokazuje, kto od ostatniego razu zrobił krok naprzód.',
+      't-p3':'<b>Otrzymuj pytania warte modlitwy.</b> Żadnych ogólnych rad — pytania zbudowane z twojej grupy i twoich własnych słów.',
+      't-reassure':'🔒 To nie jest świadectwo i nikt cię nie ocenia. Twoja mapa należy do ciebie. Tylko ty decydujesz, czym się dzielisz.',
+      't-start':'Zmapuj moją grupę →', 't-time':'⏱ około 10 minut', 'code-entry':'Wracasz? Wpisz kod grupy',
+      't-s1-eyebrow':'Krok 1 z 3', 't-s1-title':'Twoja grupa',
+      't-s1-l1':'Jak nazywa się wasza grupa?', 't-s1-l2':'Kto prowadzi ją z tobą?',
+      't-s1-hint':'Cała aplikacja i pytania coacha będą odpowiadać po polsku.',
+      't-back':'← Wstecz', 't-s1-next':'Dalej: twoi ludzie →', 't-demo':'albo wypróbuj grupę demo z Frýdlantu',
+      't-s2-eyebrow':'Krok 2 z 3', 't-s2-title':'Twoi ludzie',
+      't-s2-lede':'Dodaj ich, jak ci wygodnie — potem przesuń każdą kropkę tam, gdzie naprawdę są na drodze, nawet jeśli to „prawie“. Zaufaj intuicji; wszystko możesz później zmienić.',
+      't-addnames':'Dodaj te imiona ↓', 't-import':'📄 Import CSV / Excel',
+      'import-msg':'Masz już listę? Zaimportuj ją — imiona odczytamy z pierwszej kolumny (albo z kolumny „Imię“).',
+      't-s2-next':'Dalej: jak naprawdę idzie →',
+      't-s3-eyebrow':'Krok 3 z 3',
+      't-s3-title':'Zanim przyjdą liczby — jak '+EM('naprawdę')+' idzie?',
+      't-s3-lede':'Służba to nie arkusz kalkulacyjny. Własnymi słowami — zdanie albo cała strona:',
+      't-heart-ph':'Szczerze, ten semestr był…',
+      't-s3-hint':'🔒 Zostaje tylko dla ciebie. Coach czyta to, żeby zadawać ci lepsze pytania — nic więcej.',
+      't-reveal':'Pokaż mi moją mapę ✨',
+      't-p-q1':'Z czym się zmagasz?', 't-p-q2':'Nad czym pracujesz?', 't-p-q3':'Co było trudne?', 't-p-q4':'Kto był trudny?', 't-p-q5':'Na co masz nadzieję?',
+    },
+  },
+  ro: {
+    zones: [
+      { name:'VINO ȘI VEZI', sub:'curioși' },
+      { name:'POCĂIEȘTE-TE ȘI CREDE', sub:'intră în credință' },
+      { name:'URMEAZĂ-MĂ', sub:'cresc' },
+      { name:'PESCARI DE OAMENI', sub:'slujesc' },
+      { name:'VĂ TRIMIT', sub:'conduc' },
+    ],
+    mstones: [
+      { name:'Pocăiește-te și crede', ask:'vorbește și roagă-te cu ei despre credință' },
+      { name:'Urmează-Mă', ask:'invită-i în obiceiurile unui ucenic' },
+      { name:'Pescari de oameni', ask:'dă-le pe cineva căruia să-i slujească' },
+      { name:'Vă trimit', ask:'pregătește-i să fie trimiși' },
+    ],
+    quotes: ['„Veniți și veți vedea.“','„Pocăiți-vă și credeți în Evanghelie.“','„Vino după Mine.“','„Vă voi face pescari de oameni.“','„Cum M-a trimis pe Mine Tatăl, așa vă trimit și Eu pe voi.“'],
+    tabs: { today:'Azi', checkin:'✏️ Check-in', movement:'Mișcare', coach:'Coach' },
+    strings: {
+      't-title':'Privește-ți grupul așa cum îl vede Păstorul.',
+      't-lede':'Isus a chemat oamenii pas cu pas. O hartă a lucrării este pur și simplu grupul tău, așezat de-a lungul acestei călătorii — ca să vezi unde este cu adevărat fiecare tânăr și de ce are nevoie mai departe.',
+      't-p1':'<b>Vezi pe toți dintr-o privire.</b> Fiecare elev, așezat pe drum — tot grupul într-o singură imagine.',
+      't-p2':'<b>Urmărește-i cum se mișcă.</b> Revino oricând; harta ține minte și arată cine a făcut un pas înainte de data trecută.',
+      't-p3':'<b>Primește întrebări pentru care merită să te rogi.</b> Nu sfaturi generice — întrebări construite din grupul tău și din propriile tale cuvinte.',
+      't-reassure':'🔒 Acesta nu e un carnet de note și nimeni nu îți dă calificative. Harta ta îți aparține. Doar tu decizi ce împărtășești.',
+      't-start':'Cartografiază-mi grupul →', 't-time':'⏱ cam 10 minute', 'code-entry':'Te întorci? Introdu codul grupului',
+      't-s1-eyebrow':'Pasul 1 din 3', 't-s1-title':'Grupul tău',
+      't-s1-l1':'Cum se numește grupul vostru?', 't-s1-l2':'Cine îl conduce împreună cu tine?',
+      't-s1-hint':'Toată aplicația și întrebările coach-ului îți răspund în română.',
+      't-back':'← Înapoi', 't-s1-next':'Mai departe: oamenii tăi →', 't-demo':'sau încearcă grupul demo din Frýdlant',
+      't-s2-eyebrow':'Pasul 2 din 3', 't-s2-title':'Oamenii tăi',
+      't-s2-lede':'Adaugă-i cum îți e mai ușor — apoi glisează fiecare punct acolo unde sunt cu adevărat pe drum, chiar dacă e „aproape“. Mergi pe instinct; poți schimba orice mai târziu.',
+      't-addnames':'Adaugă aceste nume ↓', 't-import':'📄 Import CSV / Excel',
+      'import-msg':'Ai deja o listă? Import-o — citim numele din prima coloană (sau din coloana „Nume“).',
+      't-s2-next':'Mai departe: cum merge cu adevărat →',
+      't-s3-eyebrow':'Pasul 3 din 3',
+      't-s3-title':'Înainte de cifre — cum merge '+EM('cu adevărat')+'?',
+      't-s3-lede':'Lucrarea nu e un tabel. Cu propriile cuvinte — o propoziție sau o pagină întreagă:',
+      't-heart-ph':'Sincer, semestrul acesta a fost…',
+      't-s3-hint':'🔒 Rămâne doar la tine. Coach-ul îl citește ca să îți pună întrebări mai bune — doar pentru asta.',
+      't-reveal':'Arată-mi harta ✨',
+      't-p-q1':'Unde te lupți?', 't-p-q2':'La ce lucrezi?', 't-p-q3':'Ce a fost greu?', 't-p-q4':'Cine a fost greu?', 't-p-q5':'Ce speri?',
+    },
+  },
+  sr: {
+    zones: [
+      { name:'DOĐI I VIDI', sub:'radoznali' },
+      { name:'POKAJ SE I VERUJ', sub:'ulaze u veru' },
+      { name:'POĐI ZA MNOM', sub:'rastu' },
+      { name:'RIBARI LJUDI', sub:'služe' },
+      { name:'ŠALJEM VAS', sub:'vode' },
+    ],
+    mstones: [
+      { name:'Pokaj se i veruj', ask:'razgovaraj i moli se s njima o veri' },
+      { name:'Pođi za mnom', ask:'pozovi ih u navike učenika' },
+      { name:'Ribari ljudi', ask:'daj im nekoga kome mogu služiti' },
+      { name:'Šaljem vas', ask:'pripremi ih za slanje' },
+    ],
+    quotes: ['„Dođite i videćete.“','„Pokajte se i verujte u jevanđelje.“','„Pođi za mnom.“','„Učiniću vas ribarima ljudi.“','„Kao što je Otac poslao mene, i ja šaljem vas.“'],
+    tabs: { today:'Danas', checkin:'✏️ Check-in', movement:'Kretanje', coach:'Coach' },
+    strings: {
+      't-title':'Gledaj svoju grupu očima Pastira.',
+      't-lede':'Isus je pozivao ljude korak po korak. Mapa službe je jednostavno tvoja grupa, raspoređena duž tog puta — da vidiš gde je svaka mlada osoba zaista i šta joj je sledeće potrebno.',
+      't-p1':'<b>Vidi sve odjednom.</b> Svaki učenik na svom mestu puta — cela grupa u jednoj slici.',
+      't-p2':'<b>Gledaj kako se kreću.</b> Vrati se bilo kada; mapa pamti i pokazuje ko je od prošlog puta zakoračio napred.',
+      't-p3':'<b>Dobijaj pitanja vredna molitve.</b> Bez opštih saveta — pitanja izgrađena iz tvoje grupe i tvojih sopstvenih reči.',
+      't-reassure':'🔒 Ovo nije đačka knjižica i niko te ne ocenjuje. Tvoja mapa pripada tebi. Samo ti odlučuješ šta deliš.',
+      't-start':'Mapiraj moju grupu →', 't-time':'⏱ oko 10 minuta', 'code-entry':'Vraćaš se? Unesi kod grupe',
+      't-s1-eyebrow':'Korak 1 od 3', 't-s1-title':'Tvoja grupa',
+      't-s1-l1':'Kako se vaša grupa zove?', 't-s1-l2':'Ko je vodi sa tobom?',
+      't-s1-hint':'Cela aplikacija i pitanja coacha odgovaraće ti na srpskom.',
+      't-back':'← Nazad', 't-s1-next':'Dalje: tvoji ljudi →', 't-demo':'ili isprobaj demo grupu iz Frýdlanta',
+      't-s2-eyebrow':'Korak 2 od 3', 't-s2-title':'Tvoji ljudi',
+      't-s2-lede':'Dodaj ih kako ti je najlakše — zatim prevuci svaku tačku tamo gde zaista jesu na putu, makar i „skoro“. Veruj svom osećaju; sve možeš kasnije promeniti.',
+      't-addnames':'Dodaj ova imena ↓', 't-import':'📄 Uvoz CSV / Excel',
+      'import-msg':'Već imaš spisak? Uvezi ga — imena čitamo iz prve kolone (ili iz kolone „Ime“).',
+      't-s2-next':'Dalje: kako zaista ide →',
+      't-s3-eyebrow':'Korak 3 od 3',
+      't-s3-title':'Pre brojeva — kako '+EM('zaista')+' ide?',
+      't-s3-lede':'Služba nije tabela. Svojim rečima — rečenica ili cela strana:',
+      't-heart-ph':'Iskreno, ovaj semestar je bio…',
+      't-s3-hint':'🔒 Ostaje samo tebi. Coach to čita da bi te bolje pitao — ništa više.',
+      't-reveal':'Pokaži mi moju mapu ✨',
+      't-p-q1':'Gde se mučiš?', 't-p-q2':'Na čemu radiš?', 't-p-q3':'Šta je bilo teško?', 't-p-q4':'Ko je bio težak?', 't-p-q5':'Čemu se nadaš?',
+    },
+  },
+  sk: {
+    zones: [
+      { name:'POĎ A UVIDÍŠ', sub:'zvedaví' },
+      { name:'ČIŇ POKÁNIE A VER', sub:'vstupujú do viery' },
+      { name:'NASLEDUJ MA', sub:'rastú' },
+      { name:'RYBÁRI ĽUDÍ', sub:'slúžia' },
+      { name:'POSIELAM VÁS', sub:'vedú' },
+    ],
+    mstones: [
+      { name:'Čiň pokánie a ver', ask:'rozprávaj sa s nimi a modli sa za ich vieru' },
+      { name:'Nasleduj ma', ask:'pozvi ich do návykov učeníka' },
+      { name:'Rybári ľudí', ask:'daj im niekoho, komu môžu slúžiť' },
+      { name:'Posielam vás', ask:'priprav ich na vyslanie' },
+    ],
+    quotes: ['„Poďte a uvidíte.“','„Kajajte sa a verte evanjeliu.“','„Poď za mnou.“','„Urobím z vás rybárov ľudí.“','„Ako mňa poslal Otec, aj ja posielam vás.“'],
+    tabs: { today:'Dnes', checkin:'✏️ Check-in', movement:'Pohyb', coach:'Kouč' },
+    strings: {
+      't-title':'Pozeraj sa na svoju skupinu očami Pastiera.',
+      't-lede':'Ježiš povolával ľudí krok za krokom. Ministry mapa je jednoducho tvoja skupina rozložená pozdĺž tejto cesty — aby si videl, kde každý mladý človek skutočne je a čo potrebuje ďalej.',
+      't-p1':'<b>Uvidíš všetkých naraz.</b> Každý študent na svojej ceste — celá skupina v jednom obraze.',
+      't-p2':'<b>Uvidíš, ako sa hýbu.</b> Vráť sa kedykoľvek; mapa si pamätá a ukáže, kto od minula urobil krok vpred.',
+      't-p3':'<b>Dostaneš otázky, za ktoré sa oplatí modliť.</b> Žiadne všeobecné rady — otázky z tvojej skupiny a tvojich vlastných slov.',
+      't-reassure':'🔒 Toto nie je vysvedčenie a nikto ťa neznámkuje. Tvoja mapa patrí tebe. Len ty rozhoduješ, čo zdieľaš.',
+      't-start':'Zmapovať moju skupinu →', 't-time':'⏱ asi 10 minút', 'code-entry':'Vraciaš sa? Zadaj kód skupiny',
+      't-s1-eyebrow':'Krok 1 z 3', 't-s1-title':'Tvoja skupina',
+      't-s1-l1':'Ako sa vaša skupina volá?', 't-s1-l2':'Kto ju vedie s tebou?',
+      't-s1-hint':'Kouč aj celá aplikácia ti budú odpovedať po slovensky.',
+      't-back':'← Späť', 't-s1-next':'Ďalej: tvoji ľudia →', 't-demo':'alebo vyskúšaj demo skupinu Frýdlant',
+      't-s2-eyebrow':'Krok 2 z 3', 't-s2-title':'Tvoji ľudia',
+      't-s2-lede':'Pridaj ich, ako ti je najjednoduchšie — potom posuň každú bodku tam, kde na ceste naozaj sú, pokojne aj „takmer“. Ver svojmu inštinktu; všetko sa dá neskôr zmeniť.',
+      't-addnames':'Pridať tieto mená ↓', 't-import':'📄 Import CSV / Excel',
+      'import-msg':'Už máš zoznam? Naimportuj ho — mená načítame z prvého stĺpca (alebo zo stĺpca „Meno“).',
+      't-s2-next':'Ďalej: ako to naozaj ide →',
+      't-s3-eyebrow':'Krok 3 z 3',
+      't-s3-title':'Skôr než prídu čísla — ako to '+EM('naozaj')+' ide?',
+      't-s3-lede':'Služba nie je tabuľka. Vlastnými slovami — veta alebo celá strana:',
+      't-heart-ph':'Úprimne, tento semester bol…',
+      't-s3-hint':'🔒 Zostáva len tebe. Kouč to číta, aby sa ťa pýtal lepšie — nič viac.',
+      't-reveal':'Ukáž mi moju mapu ✨',
+      't-p-q1':'Kde sa trápiš?', 't-p-q2':'Na čom pracuješ?', 't-p-q3':'Čo bolo ťažké?', 't-p-q4':'Kto bol ťažký?', 't-p-q5':'V čo dúfaš?',
+    },
+  },
+  sl: {
+    zones: [
+      { name:'PRIDI IN POGLEJ', sub:'radovedni' },
+      { name:'SPREOBRNI SE IN VERUJ', sub:'vstopajo v vero' },
+      { name:'HODI ZA MENOJ', sub:'rastejo' },
+      { name:'RIBIČI LJUDI', sub:'služijo' },
+      { name:'POŠILJAM VAS', sub:'vodijo' },
+    ],
+    mstones: [
+      { name:'Spreobrni se in veruj', ask:'pogovarjaj se in moli z njimi o veri' },
+      { name:'Hodi za menoj', ask:'povabi jih v navade učenca' },
+      { name:'Ribiči ljudi', ask:'daj jim nekoga, ki mu lahko služijo' },
+      { name:'Pošiljam vas', ask:'pripravi jih na pošiljanje' },
+    ],
+    quotes: ['„Pridite in boste videli.“','„Spreobrnite se in verujte evangeliju.“','„Hodi za menoj.“','„Naredil vas bom za ribiče ljudi.“','„Kakor je Oče mene poslal, tudi jaz pošiljam vas.“'],
+    tabs: { today:'Danes', checkin:'✏️ Check-in', movement:'Premiki', coach:'Coach' },
+    strings: {
+      't-title':'Poglej svojo skupino z očmi Pastirja.',
+      't-lede':'Jezus je ljudi klical korak za korakom. Zemljevid službe je preprosto tvoja skupina, razporejena vzdolž te poti — da vidiš, kje vsak mladi človek zares je in kaj potrebuje naprej.',
+      't-p1':'<b>Vidi vse naenkrat.</b> Vsak učenec na svojem mestu poti — cela skupina v eni sliki.',
+      't-p2':'<b>Spremljaj, kako se premikajo.</b> Vrni se kadar koli; zemljevid si zapomni in pokaže, kdo je od zadnjič stopil naprej.',
+      't-p3':'<b>Prejemaj vprašanja, vredna molitve.</b> Brez splošnih nasvetov — vprašanja, zgrajena iz tvoje skupine in tvojih lastnih besed.',
+      't-reassure':'🔒 To ni spričevalo in nihče te ne ocenjuje. Tvoj zemljevid pripada tebi. Samo ti odločaš, kaj deliš.',
+      't-start':'Nariši zemljevid moje skupine →', 't-time':'⏱ približno 10 minut', 'code-entry':'Se vračaš? Vnesi kodo skupine',
+      't-s1-eyebrow':'Korak 1 od 3', 't-s1-title':'Tvoja skupina',
+      't-s1-l1':'Kako se imenuje vaša skupina?', 't-s1-l2':'Kdo jo vodi s teboj?',
+      't-s1-hint':'Cela aplikacija in vprašanja coacha ti bodo odgovarjala v slovenščini.',
+      't-back':'← Nazaj', 't-s1-next':'Naprej: tvoji ljudje →', 't-demo':'ali preizkusi demo skupino iz Frýdlanta',
+      't-s2-eyebrow':'Korak 2 od 3', 't-s2-title':'Tvoji ljudje',
+      't-s2-lede':'Dodaj jih, kakor ti je najlažje — nato povleci vsako piko tja, kjer na poti zares so, tudi če je to „skoraj“. Zaupaj občutku; vse lahko pozneje spremeniš.',
+      't-addnames':'Dodaj ta imena ↓', 't-import':'📄 Uvoz CSV / Excel',
+      'import-msg':'Že imaš seznam? Uvozi ga — imena preberemo iz prvega stolpca (ali iz stolpca „Ime“).',
+      't-s2-next':'Naprej: kako zares gre →',
+      't-s3-eyebrow':'Korak 3 od 3',
+      't-s3-title':'Preden pridejo številke — kako gre '+EM('zares')+'?',
+      't-s3-lede':'Služba ni razpredelnica. S svojimi besedami — stavek ali cela stran:',
+      't-heart-ph':'Iskreno, ta semester je bil…',
+      't-s3-hint':'🔒 Ostane samo tebi. Coach to bere, da ti zastavi boljša vprašanja — nič drugega.',
+      't-reveal':'Pokaži mi moj zemljevid ✨',
+      't-p-q1':'Kje se boriš?', 't-p-q2':'Na čem delaš?', 't-p-q3':'Kaj je bilo težko?', 't-p-q4':'Kdo je bil težak?', 't-p-q5':'V kaj upaš?',
+    },
+  },
+  uk: {
+    zones: [
+      { name:'ПРИЙДИ І ПОБАЧ', sub:'цікавляться' },
+      { name:'ПОКАЙСЯ І ВІРУЙ', sub:'входять у віру' },
+      { name:'ІДИ ЗА МНОЮ', sub:'зростають' },
+      { name:'ЛОВЦІ ЛЮДЕЙ', sub:'служать' },
+      { name:'ПОСИЛАЮ ВАС', sub:'ведуть' },
+    ],
+    mstones: [
+      { name:'Покайся і віруй', ask:'говори з ними та молися про їхню віру' },
+      { name:'Іди за Мною', ask:'запроси їх у звички учня' },
+      { name:'Ловці людей', ask:'дай їм когось, кому вони можуть служити' },
+      { name:'Посилаю вас', ask:'приготуй їх до послання' },
+    ],
+    quotes: ['«Прийдіть і побачите.»','«Покайтеся і віруйте в Євангеліє.»','«Іди за Мною.»','«Я зроблю вас ловцями людей.»','«Як Отець послав Мене, так і Я посилаю вас.»'],
+    tabs: { today:'Сьогодні', checkin:'✏️ Чек-ін', movement:'Рух', coach:'Коуч' },
+    strings: {
+      't-title':'Подивись на свою групу очима Пастиря.',
+      't-lede':'Ісус кликав людей крок за кроком. Мапа служіння — це просто твоя група, розкладена вздовж цієї дороги, щоб ти бачив, де насправді кожна молода людина і що їй потрібно далі.',
+      't-p1':'<b>Бач усіх одразу.</b> Кожен студент на своєму місці дороги — вся група в одній картині.',
+      't-p2':'<b>Спостерігай за рухом.</b> Повертайся будь-коли; мапа памʼятає і показує, хто зробив крок уперед від минулого разу.',
+      't-p3':'<b>Отримуй запитання, варті молитви.</b> Жодних загальних порад — запитання з твоєї групи і твоїх власних слів.',
+      't-reassure':'🔒 Це не табель, і ніхто тебе не оцінює. Твоя мапа належить тобі. Тільки ти вирішуєш, чим ділитися.',
+      't-start':'Змапувати мою групу →', 't-time':'⏱ близько 10 хвилин', 'code-entry':'Повертаєшся? Введи код групи',
+      't-s1-eyebrow':'Крок 1 із 3', 't-s1-title':'Твоя група',
+      't-s1-l1':'Як називається ваша група?', 't-s1-l2':'Хто веде її разом із тобою?',
+      't-s1-hint':'Увесь застосунок і запитання коуча відповідатимуть українською.',
+      't-back':'← Назад', 't-s1-next':'Далі: твої люди →', 't-demo':'або спробуй демо-групу з Фрідланта',
+      't-s2-eyebrow':'Крок 2 із 3', 't-s2-title':'Твої люди',
+      't-s2-lede':'Додай їх, як тобі зручно — потім пересунь кожну крапку туди, де вони насправді на дорозі, навіть якщо це «майже». Довірся інтуїції; все можна змінити пізніше.',
+      't-addnames':'Додати ці імена ↓', 't-import':'📄 Імпорт CSV / Excel',
+      'import-msg':'Уже маєш список? Імпортуй його — імена зчитаємо з першої колонки (або з колонки «Імʼя»).',
+      't-s2-next':'Далі: як усе насправді →',
+      't-s3-eyebrow':'Крок 3 із 3',
+      't-s3-title':'Перш ніж цифри — як усе йде '+EM('насправді')+'?',
+      't-s3-lede':'Служіння — це не таблиця. Своїми словами — речення чи ціла сторінка:',
+      't-heart-ph':'Чесно кажучи, цей семестр був…',
+      't-s3-hint':'🔒 Залишається тільки тобі. Коуч читає це, щоб ставити кращі запитання — і все.',
+      't-reveal':'Покажи мені мою мапу ✨',
+      't-p-q1':'Де тобі важко?', 't-p-q2':'Над чим працюєш?', 't-p-q3':'Що було важким?', 't-p-q4':'Хто був важким?', 't-p-q5':'На що надієшся?',
+    },
+  },
 };
 function setLang(l) {
+  if (!L10N[l]) l = 'en';
   LANG = l; lsSet('mm-lang', l);
+  document.documentElement.lang = l;
+  const sel = $('langsel'); if (sel && sel.value !== l) sel.value = l;
   const pack = L10N[l];
-  const EN = {
-    zones:[{name:'COME & SEE',sub:'curious'},{name:'REPENT & BELIEVE',sub:'crossing into faith'},{name:'FOLLOW ME',sub:'growing'},{name:'FISH FOR PEOPLE',sub:'ministering'},{name:'SENDING YOU',sub:'leading'}],
-    mstones:[{name:'Repent & believe',ask:'talk & pray with them about believing'},{name:'Follow me',ask:'invite them into the habits of a disciple'},{name:'Fish for people',ask:'give them someone to serve'},{name:'Sending you',ask:'prepare to send them out'}],
-    tabs:{today:'Today',checkin:'✏️ Check-in',movement:'Movement',coach:'Coach'},
-  };
-  const src = pack || EN;
-  (src.zones||EN.zones).forEach((z,i)=>{ ZONES[i].name=z.name; ZONES[i].sub=z.sub; });
-  (src.mstones||EN.mstones).forEach((m,i)=>{ MSTONES[i].name=m.name; MSTONES[i].ask=m.ask; });
-  if (pack) {
-    for (const id in pack.strings) { const el=$(id); if (el) el.innerHTML = pack.strings[id]; }
-    document.querySelectorAll('.t-back').forEach(el=>el.textContent='← Zpět');
-    const hp=$('heart'); if (hp) hp.placeholder = pack.strings['t-heart-ph'] || hp.placeholder;
-    pack.quotes.forEach((q,i)=>{ const el=document.querySelectorAll('.line-cols .q')[i]; if (el) el.textContent = q; });
-    document.querySelectorAll('.line-cols .t').forEach((el,i)=>{ el.textContent = pack.zones[i].name.charAt(0)+pack.zones[i].name.slice(1).toLowerCase(); });
-  }
-  const tabs = (pack&&pack.tabs)||EN.tabs;
+  pack.zones.forEach((z,i)=>{ ZONES[i].name=z.name; ZONES[i].sub=z.sub; });
+  pack.mstones.forEach((m,i)=>{ MSTONES[i].name=m.name; MSTONES[i].ask=m.ask; });
+  for (const id in pack.strings) { const el=$(id); if (el) el.innerHTML = pack.strings[id]; }
+  document.querySelectorAll('.t-back').forEach(el=>el.textContent = pack.strings['t-back']);
+  const hp=$('heart'); if (hp) hp.placeholder = pack.strings['t-heart-ph'] || hp.placeholder;
+  pack.quotes.forEach((q,i)=>{ const el=document.querySelectorAll('.line-cols .q')[i]; if (el) el.textContent = q; });
+  document.querySelectorAll('.line-cols .t').forEach((el,i)=>{ const n = pack.zones[i].name; el.textContent = n.charAt(0)+n.slice(1).toLowerCase(); });
   document.querySelectorAll('.tab').forEach(t=>{
     const k = t.dataset.pane;
-    t.innerHTML = tabs[k] + (k==='coach' ? ' <span class="badge" id="coach-n"></span>' : '');
+    t.innerHTML = pack.tabs[k] + (k==='coach' ? ' <span class="badge" id="coach-n"></span>' : '');
   });
   if (snapshots.length) renderAll();
   if (draft) renderCheckin();
   renderPlacer();
 }
+// language selector — one option per language of the JV countries
+(function(){
+  const sel = document.getElementById('langsel');
+  if (sel) sel.innerHTML = Object.entries(LANGS)
+    .map(([code,m])=>`<option value="${code}">${m.flag} ${m.native}</option>`).join('');
+})();
 function zoneOf(v){ let z=0; ZFROM.forEach((f,i)=>{ if (v>=f) z=i; }); return z; }
 function hashN(n){ let h=0; for (const c of n) h=(h*31+c.charCodeAt(0))%997; return h; }
 
@@ -490,10 +1137,11 @@ async function api(path, body){
 }
 async function boot(){
   const savedLang = lsGet('mm-lang');
-  if (savedLang && savedLang !== 'en') {
-    const sel = $('langsel'); if (sel) sel.value = savedLang;
-    setLang(savedLang);
-  }
+  const browserLang = (navigator.languages || [navigator.language || ''])
+    .map(t => { t = String(t).toLowerCase(); return (t.startsWith('sr') && t.endsWith('-me')) ? 'cnr' : t.split('-')[0]; })
+    .find(t => L10N[t]);
+  const initLang = (savedLang && L10N[savedLang]) ? savedLang : browserLang || 'en';
+  if (initLang !== 'en') setLang(initLang);
   if (location.protocol === 'file:') return;
   try {
     const h = await api('/health');
@@ -525,7 +1173,7 @@ function cloudSave(path, body){
 const $ = id => document.getElementById(id);
 const last = () => snapshots[snapshots.length-1];
 const prev = () => snapshots.length>1 ? snapshots[snapshots.length-2] : null;
-const fmtDate = d => new Date(d+'T12:00:00').toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+const fmtDate = d => new Date(d+'T12:00:00').toLocaleDateString(LANGS[LANG].locale, {day:'numeric', month:'short', year:'numeric'});
 
 // ═══════════ onboarding ═══════════
 function go(s) { step = s;
@@ -593,7 +1241,7 @@ function finishImport(rows, fname) {
   if (!rows.length) { $('import-msg').textContent = '⚠ That file looks empty.'; return; }
   // find the name column: a header cell matching name-ish words, else column 0
   const header = rows[0].map(c=>c.toLowerCase());
-  let col = header.findIndex(h=>/^(name|names|student|jm[ée]no|imi[eę]|ім'?я|meno|nume|име)/.test(h));
+  let col = header.findIndex(h=>/^(name|names|student|jm[ée]no|imi[eę]|ім.?я|meno|nume|име|ime|nimi|n[ée]v|v[āa]rds|emri|vārds)/.test(h));
   let start = 0;
   if (col >= 0) start = 1; else {
     col = 0;
@@ -699,12 +1347,12 @@ async function finishOnboarding() {
   const students = {};
   people.forEach(p=>students[p.n]=p.v);
   snapshots = [{ date: today.toISOString().slice(0,10),
-    label: today.toLocaleDateString('en-GB',{month:'short',year:'numeric'}), students }];
+    label: today.toLocaleDateString(LANGS[LANG].locale,{month:'short',year:'numeric'}), students }];
   const heart = $('heart').value.trim();
   if (heart) notes.push({ date: today.toISOString().slice(0,10), text: heart });
   if (cloud.on) {
     try {
-      const res = await api('/bootstrap', { group, students, note: heart, language: LANG==='cs'?'Čeština':'English' });
+      const res = await api('/bootstrap', { group, students, note: heart, language: LANGS[LANG].native });
       cloud.code = res.code; lsSet('mm-code', res.code);
       alert(`Your group is saved. ☁\n\nYour group code is:  ${res.code}\n\nWrite it down — it’s how you (or a co-leader) get back to your map from any device.`);
     } catch(e) { alert('Saved locally — the cloud backend isn’t reachable right now.'); }
@@ -770,7 +1418,7 @@ function renderHome() {
   $('home-events').innerHTML = upcoming.length ? upcoming.map(e=>{
     const dt = new Date(e.date+'T12:00:00');
     return `<div class="evrow">
-      <div class="ed"><div class="em">${dt.toLocaleDateString('en-GB',{month:'short'})}</div><div class="eday">${dt.getDate()}</div></div>
+      <div class="ed"><div class="em">${dt.toLocaleDateString(LANGS[LANG].locale,{month:'short'})}</div><div class="eday">${dt.getDate()}</div></div>
       <div><div class="en">${e.name}</div>${e.zone?`<div class="ez">serves: ${e.zone}</div>`:''}</div>
     </div>`;
   }).join('') : '<div style="font-size:13px; color:var(--muted); padding:4px 0;">Nothing on the calendar yet — add your next gathering below.</div>';
@@ -944,7 +1592,7 @@ function saveCheckin() {
   draft.filter(s=>!s.gone).forEach(s=>students[s.n]=s.v);
   const today = new Date();
   snapshots.push({ date: today.toISOString().slice(0,10),
-    label: today.toLocaleDateString('en-GB',{month:'short',year:'numeric'}), students });
+    label: today.toLocaleDateString(LANGS[LANG].locale,{month:'short',year:'numeric'}), students });
   const heart = $('checkin-heart').value.trim();
   if (heart) notes.push({ date: today.toISOString().slice(0,10), text: heart });
   cloudSave('/checkin', { students, note: heart });

@@ -37,7 +37,9 @@ async function createRecords(table: string, records: any[]) {
   for (let i = 0; i < records.length; i += 10) {
     const page: any = await at(encodeURIComponent(table), {
       method: "POST",
-      body: JSON.stringify({ records: records.slice(i, i + 10) }),
+      // typecast lets select fields (e.g. Groups.Language) accept any of the
+      // 16 JV-country language names without pre-creating every option
+      body: JSON.stringify({ records: records.slice(i, i + 10), typecast: true }),
     });
     out.push(...page.records);
   }
