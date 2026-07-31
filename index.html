@@ -385,6 +385,17 @@ const MSTONES = [
   { name:'Fish for people',  at:75, ask:'give them someone to serve' },
   { name:'Sending you',      at:95, ask:'prepare to send them out' },
 ];
+// sub-stages (layers) within each zone — named live under the dot as it slides.
+// Come & See: opposed → disinterested → religious → curious · Repent & Believe: milk (new)
+// Follow Me: milk (immature) → meat · Fish: fisher → appointed · Sending: L1→L4
+const STAGES = [
+  { at:0 }, { at:5 }, { at:10 }, { at:16 },
+  { at:25 },
+  { at:50 }, { at:62 },
+  { at:75 }, { at:85 },
+  { at:95 }, { at:96.5 }, { at:98 }, { at:99.5 },
+];
+function stageOf(v){ let s = STAGES[0]; STAGES.forEach(st=>{ if (v >= st.at) s = st; }); return s.name; }
 
 // ═══════════ languages ═══════════
 // One pack per language of the 16 Josiah Venture countries (Moldova shares Romanian
@@ -427,6 +438,7 @@ const L10N = {
       { name:'Fish for people', ask:'give them someone to serve' },
       { name:'Sending you', ask:'prepare to send them out' },
     ],
+    stages: ['opposed','disinterested','religious','curious','milk — new believer','milk — immature believer','meat — growing, self-feeding','fisher of people','appointed to leadership','L1 — apprentice, watching','L2 — leading together','L3 — leading, being coached','L4 — leading on their own'],
     quotes: ['“Come and you will see.”','“Repent and believe the good news.”','“Come, follow me.”','“I will send you out to fish for people.”','“As the Father has sent me, I am sending you.”'],
     tabs: { today:'Today', checkin:'✏️ Check-in', movement:'Movement', coach:'Coach' },
     strings: {
@@ -469,6 +481,7 @@ const L10N = {
       { name:'Peshkatarë njerëzish', ask:'jepu dikë të cilit t’i shërbejnë' },
       { name:'Po ju dërgoj', ask:'përgatiti që të dërgohen' },
     ],
+    stages: ['kundërshton','i/e painteresuar','fetar/e','kureshtar/e','qumësht — besimtar i ri','qumësht — besimtar i papjekur','ushqim i fortë — rritet vetë','peshkatar njerëzish','caktuar në udhëheqje','L1 — nxënës, vëzhgon','L2 — udhëheq bashkë','L3 — udhëheq me shoqërim','L4 — udhëheq vetë'],
     quotes: ['„Ejani dhe do të shihni.“','„Pendohuni dhe besoni ungjillin.“','„Eja, ndiqmë!“','„Do t’ju bëj peshkatarë njerëzish.“','„Sikurse më dërgoi mua Ati, edhe unë po ju dërgoj ju.“'],
     tabs: { today:'Sot', checkin:'✏️ Check-in', movement:'Lëvizja', coach:'Mentori' },
     strings: {
@@ -511,6 +524,7 @@ const L10N = {
       { name:'Ловци на хора', ask:'дай им някого, на когото да служат' },
       { name:'Изпращам ви', ask:'подготви ги да бъдат изпратени' },
     ],
+    stages: ['противи се','незаинтересован/а','религиозен/на','любопитен/на','мляко — нов вярващ','мляко — незрял вярващ','твърда храна — расте сам','ловец на хора','назначен/а за водач','L1 — ученик, наблюдава','L2 — води заедно','L3 — води с подкрепа','L4 — води самостоятелно'],
     quotes: ['„Елате и ще видите.“','„Покайте се и повярвайте в благовестието.“','„Ела и Ме следвай.“','„Ще ви направя ловци на хора.“','„Както Отец изпрати Мен, така и Аз изпращам вас.“'],
     tabs: { today:'Днес', checkin:'✏️ Чекин', movement:'Движение', coach:'Коуч' },
     strings: {
@@ -553,6 +567,7 @@ const L10N = {
       { name:'Ribari ljudi', ask:'daj im nekoga kome mogu služiti' },
       { name:'Šaljem vas', ask:'pripremi ih za slanje' },
     ],
+    stages: ['protivi se','nezainteresiran/a','religiozan/na','znatiželjan/na','mlijeko — novi vjernik','mlijeko — nezreli vjernik','čvrsta hrana — raste sam','ribar ljudi','postavljen/a u vodstvo','L1 — učenik, promatra','L2 — vodi zajedno','L3 — vodi uz praćenje','L4 — vodi samostalno'],
     quotes: ['„Dođite i vidjet ćete.“','„Obratite se i vjerujte evanđelju.“','„Pođi za mnom.“','„Učinit ću vas ribarima ljudi.“','„Kao što je Otac poslao mene, i ja šaljem vas.“'],
     tabs: { today:'Danas', checkin:'✏️ Check-in', movement:'Kretanje', coach:'Coach' },
     strings: {
@@ -595,6 +610,7 @@ const L10N = {
       { name:'Rybáři lidí', ask:'dej jim někoho, komu mohou sloužit' },
       { name:'Posílám vás', ask:'připrav je k vyslání' },
     ],
+    stages: ['odmítá','bez zájmu','formálně věřící','zvědavý/á','mléko — nový věřící','mléko — nezralý věřící','maso — roste a sytí se sám','rybář lidí','pověřen(a) vedením','L1 — učeň, dívá se','L2 — vede společně','L3 — vede s doprovázením','L4 — vede samostatně'],
     quotes: ['„Pojďte a uvidíte.“','„Čiňte pokání a věřte evangeliu.“','„Pojď za mnou.“','„Učiním z vás rybáře lidí.“','„Jako mne poslal Otec, tak já posílám vás.“'],
     tabs: { today:'Dnes', checkin:'✏️ Check-in', movement:'Pohyb', coach:'Kouč' },
     strings: {
@@ -637,6 +653,7 @@ const L10N = {
       { name:'Inimesepüüdjad', ask:'anna neile keegi, keda teenida' },
       { name:'Ma läkitan teid', ask:'valmista nad läkitamiseks ette' },
     ],
+    stages: ['vastuseisus','ükskõikne','religioosne','uudishimulik','piim — uus usklik','piim — ebaküps usklik','tahke toit — kasvab ise','inimesepüüdja','määratud juhtima','L1 — õpilane, vaatleb','L2 — juhib koos','L3 — juhib, saatjaga','L4 — juhib iseseisvalt'],
     quotes: ['„Tulge ja vaadake!“','„Parandage meelt ja uskuge evangeeliumisse!“','„Järgne mulle!“','„Ma teen teist inimesepüüdjad.“','„Nõnda nagu Isa on läkitanud minu, nõnda saadan ka mina teid.“'],
     tabs: { today:'Täna', checkin:'✏️ Check-in', movement:'Liikumine', coach:'Coach' },
     strings: {
@@ -679,6 +696,7 @@ const L10N = {
       { name:'Menschenfischer', ask:'gib ihnen jemanden, dem sie dienen können' },
       { name:'Ich sende euch', ask:'bereite sie aufs Aussenden vor' },
     ],
+    stages: ['ablehnend','desinteressiert','religiös','neugierig','Milch — neuer Gläubiger','Milch — unreifer Gläubiger','feste Nahrung — wächst selbstständig','Menschenfischer','in Leitung berufen','L1 — Lernender, schaut zu','L2 — leitet gemeinsam','L3 — leitet, wird begleitet','L4 — leitet eigenständig'],
     quotes: ['„Kommt und seht!“','„Tut Buße und glaubt an das Evangelium!“','„Folge mir nach!“','„Ich will euch zu Menschenfischern machen.“','„Wie mich der Vater gesandt hat, so sende ich euch.“'],
     tabs: { today:'Heute', checkin:'✏️ Check-in', movement:'Bewegung', coach:'Coach' },
     strings: {
@@ -721,6 +739,7 @@ const L10N = {
       { name:'Emberhalászok', ask:'adj nekik valakit, akit szolgálhatnak' },
       { name:'Küldelek titeket', ask:'készítsd fel őket a kiküldésre' },
     ],
+    stages: ['elutasító','közömbös','vallásos','érdeklődő','tej — új hívő','tej — éretlen hívő','szilárd étel — önállóan növekszik','emberhalász','vezetésre kijelölve','L1 — tanítvány, figyel','L2 — együtt vezet','L3 — vezet, kísérettel','L4 — önállóan vezet'],
     quotes: ['„Jöjjetek, és meglátjátok.“','„Térjetek meg, és higgyetek az evangéliumban!“','„Kövess engem!“','„Emberhalászokká teszlek titeket.“','„Ahogyan engem elküldött az Atya, én is elküldelek titeket.“'],
     tabs: { today:'Ma', checkin:'✏️ Check-in', movement:'Mozgás', coach:'Coach' },
     strings: {
@@ -763,6 +782,7 @@ const L10N = {
       { name:'Cilvēku zvejnieki', ask:'dod viņiem kādu, kam kalpot' },
       { name:'Es jūs sūtu', ask:'sagatavo viņus sūtīšanai' },
     ],
+    stages: ['pretojas','vienaldzīgs/a','reliģiozs/a','ziņkārīgs/a','piens — jauns ticīgais','piens — nenobriedis ticīgais','cieta barība — aug pats','cilvēku zvejnieks','iecelts/a vadībā','L1 — māceklis, vēro','L2 — vada kopā','L3 — vada ar atbalstu','L4 — vada patstāvīgi'],
     quotes: ['„Nāciet un redzēsiet!“','„Atgriezieties no grēkiem un ticiet evaņģēlijam!“','„Seko Man!“','„Es jūs darīšu par cilvēku zvejniekiem.“','„Kā Tēvs Mani ir sūtījis, tā Es jūs sūtu.“'],
     tabs: { today:'Šodien', checkin:'✏️ Check-in', movement:'Kustība', coach:'Koučs' },
     strings: {
@@ -805,6 +825,7 @@ const L10N = {
       { name:'Ribari ljudi', ask:'daj im nekoga kome mogu služiti' },
       { name:'Šaljem vas', ask:'pripremi ih za slanje' },
     ],
+    stages: ['protivi se','nezainteresovan/a','religiozan/na','radoznao/la','mlijeko — novi vjernik','mlijeko — nezreli vjernik','čvrsta hrana — raste sam','ribar ljudi','postavljen/a u vođstvo','L1 — učenik, posmatra','L2 — vodi zajedno','L3 — vodi uz praćenje','L4 — vodi samostalno'],
     quotes: ['„Dođite i vidjećete.“','„Pokajte se i vjerujte u jevanđelje.“','„Pođi za mnom.“','„Učiniću vas ribarima ljudi.“','„Kao što je Otac poslao mene, i ja šaljem vas.“'],
     tabs: { today:'Danas', checkin:'✏️ Check-in', movement:'Kretanje', coach:'Coach' },
     strings: {
@@ -847,6 +868,7 @@ const L10N = {
       { name:'Rybacy ludzi', ask:'daj im kogoś, komu mogą służyć' },
       { name:'Posyłam was', ask:'przygotuj ich do posłania' },
     ],
+    stages: ['przeciwny/a','obojętny/a','religijny/a','ciekawy/a','mleko — nowy wierzący','mleko — niedojrzały wierzący','pokarm stały — rośnie, karmi się sam','rybak ludzi','powołany/a do prowadzenia','L1 — uczeń, obserwuje','L2 — prowadzi wspólnie','L3 — prowadzi pod okiem','L4 — prowadzi samodzielnie'],
     quotes: ['„Chodźcie, a zobaczycie.“','„Nawracajcie się i wierzcie w Ewangelię.“','„Pójdź za Mną.“','„Sprawię, że staniecie się rybakami ludzi.“','„Jak Ojciec Mnie posłał, tak i Ja was posyłam.“'],
     tabs: { today:'Dziś', checkin:'✏️ Check-in', movement:'Ruch', coach:'Coach' },
     strings: {
@@ -889,6 +911,7 @@ const L10N = {
       { name:'Pescari de oameni', ask:'dă-le pe cineva căruia să-i slujească' },
       { name:'Vă trimit', ask:'pregătește-i să fie trimiși' },
     ],
+    stages: ['împotrivă','dezinteresat/ă','religios/oasă','curios/oasă','lapte — credincios nou','lapte — credincios imatur','hrană tare — crește singur','pescar de oameni','numit/ă în conducere','L1 — ucenic, privește','L2 — conduce împreună','L3 — conduce, însoțit','L4 — conduce singur'],
     quotes: ['„Veniți și veți vedea.“','„Pocăiți-vă și credeți în Evanghelie.“','„Vino după Mine.“','„Vă voi face pescari de oameni.“','„Cum M-a trimis pe Mine Tatăl, așa vă trimit și Eu pe voi.“'],
     tabs: { today:'Azi', checkin:'✏️ Check-in', movement:'Mișcare', coach:'Coach' },
     strings: {
@@ -931,6 +954,7 @@ const L10N = {
       { name:'Ribari ljudi', ask:'daj im nekoga kome mogu služiti' },
       { name:'Šaljem vas', ask:'pripremi ih za slanje' },
     ],
+    stages: ['protivi se','nezainteresovan/a','religiozan/na','radoznao/la','mleko — novi vernik','mleko — nezreli vernik','čvrsta hrana — raste sam','ribar ljudi','postavljen/a u vođstvo','L1 — učenik, posmatra','L2 — vodi zajedno','L3 — vodi uz praćenje','L4 — vodi samostalno'],
     quotes: ['„Dođite i videćete.“','„Pokajte se i verujte u jevanđelje.“','„Pođi za mnom.“','„Učiniću vas ribarima ljudi.“','„Kao što je Otac poslao mene, i ja šaljem vas.“'],
     tabs: { today:'Danas', checkin:'✏️ Check-in', movement:'Kretanje', coach:'Coach' },
     strings: {
@@ -973,6 +997,7 @@ const L10N = {
       { name:'Rybári ľudí', ask:'daj im niekoho, komu môžu slúžiť' },
       { name:'Posielam vás', ask:'priprav ich na vyslanie' },
     ],
+    stages: ['odmieta','bez záujmu','formálne veriaci','zvedavý/á','mlieko — nový veriaci','mlieko — nezrelý veriaci','mäso — rastie a sýti sa sám','rybár ľudí','poverený/á vedením','L1 — učeň, pozerá sa','L2 — vedie spoločne','L3 — vedie so sprevádzaním','L4 — vedie samostatne'],
     quotes: ['„Poďte a uvidíte.“','„Kajajte sa a verte evanjeliu.“','„Poď za mnou.“','„Urobím z vás rybárov ľudí.“','„Ako mňa poslal Otec, aj ja posielam vás.“'],
     tabs: { today:'Dnes', checkin:'✏️ Check-in', movement:'Pohyb', coach:'Kouč' },
     strings: {
@@ -1015,6 +1040,7 @@ const L10N = {
       { name:'Ribiči ljudi', ask:'daj jim nekoga, ki mu lahko služijo' },
       { name:'Pošiljam vas', ask:'pripravi jih na pošiljanje' },
     ],
+    stages: ['nasprotuje','nezainteresiran/a','religiozen/na','radoveden/na','mleko — nov vernik','mleko — nezrel vernik','trdna hrana — raste sam','ribič ljudi','postavljen/a v vodstvo','L1 — učenec, opazuje','L2 — vodi skupaj','L3 — vodi ob spremljanju','L4 — vodi samostojno'],
     quotes: ['„Pridite in boste videli.“','„Spreobrnite se in verujte evangeliju.“','„Hodi za menoj.“','„Naredil vas bom za ribiče ljudi.“','„Kakor je Oče mene poslal, tudi jaz pošiljam vas.“'],
     tabs: { today:'Danes', checkin:'✏️ Check-in', movement:'Premiki', coach:'Coach' },
     strings: {
@@ -1057,6 +1083,7 @@ const L10N = {
       { name:'Ловці людей', ask:'дай їм когось, кому вони можуть служити' },
       { name:'Посилаю вас', ask:'приготуй їх до послання' },
     ],
+    stages: ['протистоїть','байдужий/а','релігійний/а','цікавиться','молоко — новий вірянин','молоко — незрілий вірянин','тверда їжа — росте самостійно','ловець людей','призначений/а до лідерства','L1 — учень, спостерігає','L2 — веде разом','L3 — веде із супроводом','L4 — веде самостійно'],
     quotes: ['«Прийдіть і побачите.»','«Покайтеся і віруйте в Євангеліє.»','«Іди за Мною.»','«Я зроблю вас ловцями людей.»','«Як Отець послав Мене, так і Я посилаю вас.»'],
     tabs: { today:'Сьогодні', checkin:'✏️ Чек-ін', movement:'Рух', coach:'Коуч' },
     strings: {
@@ -1094,6 +1121,7 @@ function setLang(l) {
   const pack = L10N[l];
   pack.zones.forEach((z,i)=>{ ZONES[i].name=z.name; ZONES[i].sub=z.sub; });
   pack.mstones.forEach((m,i)=>{ MSTONES[i].name=m.name; MSTONES[i].ask=m.ask; });
+  pack.stages.forEach((n,i)=>{ STAGES[i].name = n; });
   for (const id in pack.strings) { const el=$(id); if (el) el.innerHTML = pack.strings[id]; }
   document.querySelectorAll('.t-back').forEach(el=>el.textContent = pack.strings['t-back']);
   const hp=$('heart'); if (hp) hp.placeholder = pack.strings['t-heart-ph'] || hp.placeholder;
@@ -1157,7 +1185,7 @@ async function boot(){
     .map(t => { t = String(t).toLowerCase(); return (t.startsWith('sr') && t.endsWith('-me')) ? 'cnr' : t.split('-')[0]; })
     .find(t => L10N[t]);
   const initLang = (savedLang && L10N[savedLang]) ? savedLang : browserLang || 'en';
-  if (initLang !== 'en') setLang(initLang);
+  setLang(initLang); // always — fills zone/milestone/stage names even for English
   const params = new URLSearchParams(location.search);
   if (params.has('fresh')) { lsSet('mm-state',''); lsSet('mm-code',''); } // ?fresh=1 → start over
   if (location.protocol !== 'file:') {
@@ -1289,7 +1317,7 @@ function loadSheetJS() {
 function placerHint(p) {
   const next = MSTONES.find(m=>m.at > p.v);
   if (next && next.at - p.v <= 6) return { cls:'near', txt:'nearing “'+next.name+'” — '+next.ask };
-  return { cls:'', txt:ZONES[zoneOf(p.v)].name.toLowerCase() };
+  return { cls:'', txt:ZONES[zoneOf(p.v)].name.toLowerCase()+' · '+stageOf(p.v) };
 }
 function renderPlacer() {
   const rows = people.map((p,i)=>{
@@ -1551,15 +1579,15 @@ function startDraft() {
   renderCheckin();
 }
 function sliderHint(s) {
-  if (s.prev==null) return { cls:'still', txt:'new — place them on the road' };
+  if (s.prev==null) return { cls:'still', txt:'new · '+stageOf(s.v) };
   const z = zoneOf(s.v), zp = zoneOf(s.prev);
   if (z > zp) return { cls:'crossed', txt:'crossed “'+ZONES[z].name.toLowerCase()+'” — you’ll confirm on save 🎉' };
   if (z < zp) return { cls:'near', txt:'moved back across “'+ZONES[zp].name.toLowerCase()+'” — go find them' };
   const next = MSTONES.find(m=>m.at > s.v);
   if (next && next.at - s.v <= 6) return { cls:'near', txt:'nearing “'+next.name+'” — '+next.ask };
-  if (Math.abs(s.v - s.prev) < 2) return { cls:'still', txt:'same as last check-in' };
-  if (s.v > s.prev) return { cls:'crossed', txt:'growing within '+ZONES[z].name.toLowerCase() };
-  return { cls:'still', txt:'drifting back within '+ZONES[z].name.toLowerCase() };
+  if (Math.abs(s.v - s.prev) < 2) return { cls:'still', txt:'same as last check-in · '+stageOf(s.v) };
+  if (s.v > s.prev) return { cls:'crossed', txt:'growing within '+ZONES[z].name.toLowerCase()+' — '+stageOf(s.v) };
+  return { cls:'still', txt:'drifting back within '+ZONES[z].name.toLowerCase()+' — '+stageOf(s.v) };
 }
 function renderCheckin() {
   $('checkin-list').innerHTML = `<div class="keyline">${ZONES.map(z=>`<div>${z.name}</div>`).join('')}</div>` +
