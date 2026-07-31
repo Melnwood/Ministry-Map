@@ -1135,6 +1135,22 @@ async function api(path, body){
   if (!r.ok) throw new Error(await r.text());
   return r.json();
 }
+// ── local persistence: everything survives a reload even with no backend ──
+function saveLocal(){
+  if (cloud.code) return; // cloud is the source of truth when a group code is active
+  try { localStorage.setItem('mm-state', JSON.stringify({ group, snapshots, notes, events:EVENTS, programs:PROGRAMS })); } catch(e){}
+}
+function loadLocal(){
+  const raw = lsGet('mm-state');
+  if (!raw) return false;
+  try {
+    const s = JSON.parse(raw);
+    group = s.group || group; snapshots = s.snapshots || []; notes = s.notes || [];
+    EVENTS = s.events || []; PROGRAMS = s.programs || [];
+    if (snapshots.length) { enterApp(); return true; }
+  } catch(e){}
+  return false;
+}
 async function boot(){
   const savedLang = lsGet('mm-lang');
   const browserLang = (navigator.languages || [navigator.language || ''])
@@ -1142,16 +1158,21 @@ async function boot(){
     .find(t => L10N[t]);
   const initLang = (savedLang && L10N[savedLang]) ? savedLang : browserLang || 'en';
   if (initLang !== 'en') setLang(initLang);
-  if (location.protocol === 'file:') return;
-  try {
-    const h = await api('/health');
-    if (!h.configured) return;
-    cloud.on = true;
-    const code = new URLSearchParams(location.search).get('code') || lsGet('mm-code');
-    if (code) { await loadCloud(code); return; }
-    const el = document.getElementById('code-entry');
-    if (el) el.style.display = 'inline';
-  } catch(e) { /* no backend — run local */ }
+  const params = new URLSearchParams(location.search);
+  if (params.has('fresh')) { lsSet('mm-state',''); lsSet('mm-code',''); } // ?fresh=1 → start over
+  if (location.protocol !== 'file:') {
+    try {
+      const h = await api('/health');
+      if (h.configured) {
+        cloud.on = true;
+        const code = params.get('code') || lsGet('mm-code');
+        if (code) { await loadCloud(code); if (cloud.code) return; }
+        const el = document.getElementById('code-entry');
+        if (el) el.style.display = 'inline';
+      }
+    } catch(e) { /* no backend — run local */ }
+  }
+  loadLocal();
 }
 async function loadCloud(code){
   try {
@@ -1370,6 +1391,7 @@ function enterApp(firstTime) {
   }
   renderAll();
   if (firstTime) openMap('today'); else goHome();
+  saveLocal();
 }
 
 // ═══════════ HOME (curated landing) ═══════════
@@ -1438,6 +1460,7 @@ function addEvent() {
   if (!name || !date) return;
   EVENTS.push({ name, date });
   cloudSave('/event', { name, date });
+  saveLocal();
   $('ev-name').value = ''; $('ev-date').value = '';
   renderHome();
 }
@@ -1596,6 +1619,7 @@ function saveCheckin() {
   const heart = $('checkin-heart').value.trim();
   if (heart) notes.push({ date: today.toISOString().slice(0,10), text: heart });
   cloudSave('/checkin', { students, note: heart });
+  saveLocal();
   $('checkin-heart').value = '';
   draft = null;
   renderAll();
