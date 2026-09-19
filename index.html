@@ -1458,7 +1458,7 @@ function renderHome() {
   const lean = Object.entries(b.students).map(([n,v])=>({ n, v, next:MSTONES.find(m=>m.at>v) }))
     .filter(x=>x.next && x.next.at-x.v<=6).sort((x,y)=>(x.next.at-x.v)-(y.next.at-y.v))[0];
   if (lean) focus.push({ i:'🙏', t:`<b>Pray with ${lean.n}</b> toward “${lean.next.name}” — they may be one conversation away.`, w:'closest to a milestone on your map' });
-  if (focus.length < 3 && d.joined.length) focus.push({ i:'✦', t:`<b>Befriend ${d.joined[0]}</b> — new people decide in their first month whether they belong.`, w:'newest on the map' });
+  if (focus.length < 3 && a && d.joined.length) focus.push({ i:'✦', t:`<b>Befriend ${d.joined[0]}</b> — new people decide in their first month whether they belong.`, w:'newest on the map' });
   $('home-focus').innerHTML = focus.slice(0,3).map(f=>`
     <div class="focus-row"><span class="fi">${f.i}</span><div><div class="ft">${f.t}</div><div class="fw">${f.w}</div></div></div>`).join('')
     || '<div class="focus-row"><span class="fi">🌱</span><div class="ft">Do your first check-in and this list will fill itself.</div></div>';
@@ -1506,7 +1506,9 @@ function draftDirty() {
 function renderToday() {
   const dirty = draftDirty();
   const cur = dirty ? draftSnapshot() : last();
-  const d = diff(dirty ? last() : prev(), cur);
+  const base = dirty ? last() : prev();
+  const d = diff(base, cur);
+  if (!base) d.joined = []; // first check-in: nobody is “new”, they're just the group
   $('unsaved-banner').innerHTML = dirty
     ? `<div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:10px; font-size:12.5px;
         padding:10px 14px; border:1.5px solid var(--warning); border-radius:10px; background:var(--surface); color:var(--ink2);">
